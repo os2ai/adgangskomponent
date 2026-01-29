@@ -1,0 +1,24 @@
+# This job refreshes the cache of the keycloak instance in os2adgang after
+# the realmimport has completed.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-post-import-refresh-cache
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      serviceAccountName: keycloak-rollout
+      initContainers:
+        - name: wait-for-realm-import
+          image: rancher/kubectl:v1.35.0
+          imagePullPolicy: Always
+          command: ["kubectl"]
+          args: ["wait", "--for=condition=complete", "-n{{ .Release.Namespace }}", "job/{{ .Values.realm.name }}"]
+      containers:
+        - name: restart-kubectl-statefulset
+          image: rancher/kubectl:v1.35.0
+          imagePullPolicy: Always
+          command: ["kubectl"]
+          args: ["rollout", "restart", "-n{{ .Release.Namespace }}", "statefulset/keycloak"]
+      restartPolicy: OnFailure

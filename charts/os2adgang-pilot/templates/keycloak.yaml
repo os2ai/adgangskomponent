@@ -1,0 +1,19 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak # TODO: naming of all resources should include release name
+spec:
+  instances: 2
+  ingress:
+{{ .Values.ingress | toYaml | indent 4 }}
+  db:
+{{ .Values.db | toYaml | indent 4 }}
+  # TODO: possible extraction of relationship between httpEnabled, ingress cert-manager, tls-secret
+  http:
+    httpEnabled: true
+  hostname:
+    hostname: {{ .Values.domain }}
+  proxy:
+    headers: xforwarded
+  update:
+    strategy: Auto

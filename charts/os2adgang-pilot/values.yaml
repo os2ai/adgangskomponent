@@ -1,0 +1,53 @@
+domain:
+
+realm:
+  name:
+  displayName:
+
+systems: []
+  #- name:
+  #  displayName:
+  #  description:
+  #  rootUrl:
+  #  adminUrl:
+  #  baseUrl:
+  #  # TODO: should be generated instead of being set here - but we also need to inject in client systems.
+  #  # We probably need a better approach than simple templating.
+  #  # An operator creates secrets on demand perhaps?
+  #  secret:
+  #  secretGenerationTime:
+  #  redirectUris: []
+  #  postLogoutRedirectUris:
+  #  webOrigins: []
+  #  protocol: openid-connect
+  #  roles: []
+  #  baseGroup:
+  #    clientRoles: []
+  #  groups: []
+  #    #- name:
+  #    #  description:
+  #    #  attributes: {}
+  #  # TODO: Naming: protocolMappers is obscure. Really means we add fields to OIDC tokens
+  #  protocolMappers: []
+  #    #- type:
+  #    #  attribute:
+  #    #  config: {}
+  #  fkaMappers: []
+  #    #- displayName:
+  #    #  type:
+  #    #  config: {}
+
+ingress:
+  #annotations:
+  #  cert-manager.io/cluster-issuer: letsencrypt
+  #tlsSecret: keycloak-tls-secret
+db:
+  #vendor: postgres
+  #host: cloudnative-pg-cluster-rw
+  #database: os2adgang
+  #usernameSecret:
+  #  name: cloudnative-pg-cluster-admin
+  #  key: username
+  #passwordSecret:
+  #  name: cloudnative-pg-cluster-admin
+  #  key: password
