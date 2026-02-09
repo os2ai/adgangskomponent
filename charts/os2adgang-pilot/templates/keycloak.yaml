@@ -17,3 +17,6 @@ spec:
     headers: xforwarded
   update:
     strategy: Auto
+  additionalOptions:
+    - name: log-level
+      value: INFO,org.keycloak.saml:TRACE
