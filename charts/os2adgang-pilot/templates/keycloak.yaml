@@ -19,4 +19,4 @@ spec:
     strategy: Auto
   additionalOptions:
     - name: log-level
-      value: INFO,org.keycloak.saml:TRACE
+      value: INFO,org.keycloak.saml:TRACE,org.keycloak.protocol.saml:TRACE,org.keycloak.events:DEBUG,org.keycloak.services:TRACE,org.keycloak.broker:TRACE
