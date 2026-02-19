@@ -33,7 +33,8 @@ build-admin-ui:
     - if: '$CI_COMMIT_TAG'
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
-        - ./admin/ui/**/*
+        - admin/ui/**/*
+        - admin/ui/*
 
 build-admin-api:
   image:
@@ -50,4 +51,5 @@ build-admin-api:
     - if: '$CI_COMMIT_TAG'
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
-        - ./admin/api/**/*
+        - admin/api/**/*
+        - admin/api/*
