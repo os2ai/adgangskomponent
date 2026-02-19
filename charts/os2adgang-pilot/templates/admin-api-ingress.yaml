@@ -3,7 +3,9 @@ kind: Ingress
 metadata:
   name: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
   annotations:
-    cert-manager.io/cluster-issuer: {{ .Values.certManager.clusterIssuer }}
+    {{- if and .Values.ingress .Values.ingress.annotations }}
+{{ .Values.ingress.annotations | toYaml | indent 4 }}
+    {{- end }}
     nginx.ingress.kubernetes.io/proxy-body-size: 50m
 spec:
   ingressClassName: {{ .Values.ingressClassName }}

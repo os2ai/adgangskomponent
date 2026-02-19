@@ -2,8 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Values.admin.ui.domain | default (print "admin." .Values.domain) }}
+  {{- if and .Values.ingress .Values.ingress.annotations }}
   annotations:
-    cert-manager.io/cluster-issuer: {{ .Values.certManager.clusterIssuer }}
+{{ .Values.ingress.annotations | toYaml | indent 4 }}
+  {{- end }}
 spec:
   ingressClassName: {{ .Values.ingressClassName }}
   rules:
