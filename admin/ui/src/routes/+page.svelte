@@ -21,8 +21,14 @@
         api = Api(user);
     });
 
-    let realms = $state([]);
-    let orgRealms = $derived(realms.filter((realm) => realm.realm !== "master"));
+    /**
+     * @typedef {{
+     *   realm: string,
+     * }} Realm
+     * @type {undefined | Realm[] | typeof LOADING}
+     */
+    let realms = $state();
+    let orgRealms = $derived(realms && !("_loading" in realms) ? realms.filter((realm) => realm.realm !== "master") : realms);
 
     let activeRealm = $state(typeof localStorage !== "undefined" && localStorage.getItem("activeRealm") || undefined);
 
@@ -111,6 +117,8 @@
     });
 
     async function loadRealms(api) {
+        realms = LOADING;
+
         const realmsResponse = await api.get("/realms");
 
         realms = realmsResponse.data;
