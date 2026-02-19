@@ -7,6 +7,7 @@ version:
     paths:
       - version
   rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_COMMIT_TAG'
 
 push-helm-charts:
@@ -30,11 +31,11 @@ build-admin-ui:
       --destination $CI_REGISTRY_IMAGE/admin-ui:latest
       --destination $CI_REGISTRY_IMAGE/admin-ui:`cat version`
   rules:
-    - if: '$CI_COMMIT_TAG'
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
         - admin/ui/**/*
         - admin/ui/*
+    - if: '$CI_COMMIT_TAG'
 
 build-admin-api:
   image:
@@ -48,8 +49,8 @@ build-admin-api:
       --destination $CI_REGISTRY_IMAGE/admin-api:latest
       --destination $CI_REGISTRY_IMAGE/admin-api:`cat version`
   rules:
-    - if: '$CI_COMMIT_TAG'
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
         - admin/api/**/*
         - admin/api/*
+    - if: '$CI_COMMIT_TAG'

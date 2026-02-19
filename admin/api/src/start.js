@@ -7,9 +7,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import cors from "cors";
+import pinoHttp from "pino-http";
 
 const app = express();
 
+app.use(pinoHttp());
 app.use(cors());
 
 app.post("/x509-parse", async (req, res) => {
@@ -74,7 +76,7 @@ app.post("/pem-key-conversion", async (req, res) => {
 
     const opensslPrivateKeyCleanupProcess = spawn("openssl", [ "rsa" ], { stdio: [ opensslPrivateKeyExtractProcess.stdout, "pipe", "pipe" ]});
 
-    console.log("Started processes");
+    req.log.info("Started processes");
 
     const opensslCertExtractOutputPromise = opensslCertExtractProcess.stdout ? streamToText(opensslCertExtractProcess.stdout) : "";
     const opensslCertExtractErrorsPromise = opensslCertExtractProcess.stderr ? streamToText(opensslCertExtractProcess.stderr) : "";
@@ -98,7 +100,7 @@ app.post("/pem-key-conversion", async (req, res) => {
     await opensslPrivateKeyExtractInputFile.close();
     await fs.rm(opensslTmpDir, { recursive: true });
 
-    console.log("Processes concluded, files cleaned up");
+    req.log.info("Processes concluded, files cleaned up");
 
     const errors = [];
     if(opensslCertExtractProcess.exitCode) {
