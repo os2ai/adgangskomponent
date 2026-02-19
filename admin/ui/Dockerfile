@@ -1,0 +1,34 @@
+FROM node:24.13.1-alpine AS build
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm ci
+
+COPY src src
+COPY static static
+COPY svelte.config.js svelte.config.js
+COPY vite.config.js vite.config.js
+COPY jsconfig.json jsconfig.json
+
+ENV PUBLIC_OIDC_AUTH_CLIENT_ID=PUBLIC_OIDC_AUTH_CLIENT_ID
+ENV PUBLIC_OIDC_AUTH_AUTHORITY=PUBLIC_OIDC_AUTH_AUTHORITY
+ENV PUBLIC_KEYCLOAK_API_BASEURL=PUBLIC_KEYCLOAK_API_BASEURL
+ENV PUBLIC_KEYCLOAK_REALM_BASEURL=PUBLIC_KEYCLOAK_REALM_BASEURL
+
+RUN npm run build -- --mode production
+
+FROM nginx:1.29.5-alpine
+COPY --from=build /app/build/ /usr/share/nginx/html
+
+ENV PUBLIC_OIDC_AUTH_CLIENT_ID=PUBLIC_OIDC_AUTH_CLIENT_ID
+ENV PUBLIC_OIDC_AUTH_AUTHORITY=PUBLIC_OIDC_AUTH_AUTHORITY
+ENV PUBLIC_KEYCLOAK_API_BASEURL=PUBLIC_KEYCLOAK_API_BASEURL
+ENV PUBLIC_KEYCLOAK_REALM_BASEURL=PUBLIC_KEYCLOAK_REALM_BASEURL
+
+COPY ./nginx.conf /etc/nginx/templates/default.conf.template
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
