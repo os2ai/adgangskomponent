@@ -5,7 +5,7 @@
     import axios from "axios";
     import { SvelteMap } from "svelte/reactivity";
     import UploadCert from "../components/UploadCert.svelte";
-    import { PUBLIC_KEYCLOAK_REALM_BASEURL } from "$env/static/public";
+    import { PUBLIC_KEYCLOAK_REALM_BASEURL, PUBLIC_API_BASEURL } from "$env/static/public";
 
     const LOADING = /** @const @type {{_loading: true}} */({ _loading: true });
 
@@ -14,7 +14,7 @@
      */
     let api = $state();
     let otherApi = axios.create({
-        baseURL: "http://localhost:5701",
+        baseURL: PUBLIC_API_BASEURL,
     });
     onMount(async () => {
         const user = await requireAuthentication();
