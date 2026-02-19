@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-admin-ui
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-admin-ui
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-admin-ui
+    spec:
+      containers:
+      - name: admin-ui
+        image: {{ .Values.admin.ui.image.repository }}:{{ .Values.admin.ui.image.tag | default .Chart.Version }}
+        env:
+        - name: PUBLIC_OIDC_AUTH_CLIENT_ID
+          value: admin-panel-client
+        - name: PUBLIC_OIDC_AUTH_AUTHORITY
+          value: https://{{ .Values.domain }}/realms/master
+        - name: PUBLIC_KEYCLOAK_API_BASEURL
+          value: https://{{ .Values.domain }}/admin
+        - name: PUBLIC_KEYCLOAK_REALM_BASEURL
+          value: https://{{ .Values.domain }}/realms
+        - name: PUBLIC_API_BASEURL
+          value: https://{{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}

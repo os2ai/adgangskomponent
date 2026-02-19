@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.certManager.clusterIssuer }}
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+spec:
+  ingressClassName: {{ .Values.ingressClassName }}
+  rules:
+    - host: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-admin-api
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
+      secretName: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}-tls

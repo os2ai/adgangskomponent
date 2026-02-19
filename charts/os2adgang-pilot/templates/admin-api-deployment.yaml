@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-admin-api
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-admin-api
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-admin-api
+    spec:
+      containers:
+      - name: admin-api
+        image: {{ .Values.admin.api.image.repository }}:{{ .Values.admin.api.image.tag | default .Chart.Version }}

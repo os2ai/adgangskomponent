@@ -52,3 +52,13 @@ db:
   #passwordSecret:
   #  name: cloudnative-pg-cluster-admin
   #  key: password
+
+admin:
+  ui:
+    #domain:
+    image:
+      repository:
+  admin:
+    #domain:
+    image:
+      repository:
