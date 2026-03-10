@@ -1,4 +1,6 @@
-FROM node:24.13.1-alpine
+FROM node:24.13.1-slim
+
+RUN apt update -y && apt install openssl -y && apt clean
 
 ENV NODE_ENV=production
 
