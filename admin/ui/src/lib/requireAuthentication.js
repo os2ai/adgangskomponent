@@ -1,5 +1,7 @@
 // @ts-check
 
+// TODO: if user does not have realm-admin permission, error: not an admin user!
+
 import UserManager from "$lib/userManager.js";
 
 export function getAuthentication() {

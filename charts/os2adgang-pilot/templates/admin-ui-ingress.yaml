@@ -7,7 +7,9 @@ metadata:
 {{ .Values.ingress.annotations | toYaml | indent 4 }}
   {{- end }}
 spec:
-  ingressClassName: {{ .Values.ingressClassName }}
+  {{- if and .Values.ingress .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
   rules:
     - host: {{ .Values.admin.ui.domain | default (print "admin." .Values.domain) }}
       http:

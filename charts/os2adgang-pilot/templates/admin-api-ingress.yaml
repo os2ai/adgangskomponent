@@ -8,7 +8,9 @@ metadata:
     {{- end }}
     nginx.ingress.kubernetes.io/proxy-body-size: 50m
 spec:
-  ingressClassName: {{ .Values.ingressClassName }}
+  {{- if and .Values.ingress .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
   rules:
     - host: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
       http:
