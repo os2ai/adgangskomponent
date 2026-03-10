@@ -11,8 +11,11 @@
 
     let password = $state("");
 
+    let uploadError = $state(undefined);
+
     async function handlePkcsForm(e) {
         e.preventDefault();
+        uploadError = undefined;
 
         const headers = {};
         if(password) {
@@ -24,10 +27,12 @@
             pemResponse = await otherApi.post("/pem-key-conversion", p12File, { headers });
         }
         catch(error) {
-            if(error.response?.status === 400) {
-                //TODO: invalid computation, look in error.response.data.errors for info, each has process, exitcode, stderr, stdout.
+            if(error?.response?.status === 400) {
+                uploadError = error.response.data;
+                console.error("Got 400 response", error.response.data);
+                return;
             }
-            //TODO: show error
+            uploadError = error?.response?.data || error;
             throw error;
         }
 
@@ -55,9 +60,11 @@
 
     async function handlePemForm(e) {
         e.preventDefault();
+        uploadError = undefined;
 
         // TODO: duplicated code from +page
         const certParseResponse = await otherApi.post("/x509-parse", certFile);
+        // TODO: handle errors
         const metadata = certParseResponse.data;
 
         // TODO: repeated validation from +page.svelte
@@ -87,6 +94,7 @@
     }
 
     async function uploadNewCerts(certData, privateKeyData) {
+        // TODO: handle errors
         const componentsResponse = await api.get(`/realms/${realm}/components`);
         const keyProviders = componentsResponse.data.filter((com) => com.providerType === "org.keycloak.keys.KeyProvider");
         const encryptionProvider = keyProviders.find((com) => com.name === "rsa-enc");
@@ -127,6 +135,13 @@
 
     <p>Upload enten et PKCS#12 (.p12) certifikat, evt. krypteret, eller hhv. et x509 certifikat og en ukrypteret RSA private key i .pem fil.</p>
     <p>Certifikatet skal være udstedet af Den Danske Stat til din organisation.</p>
+
+    {#if uploadError}
+        <div class="error">
+            <h4>Fejl</h4>
+            <pre>{typeof uploadError === "object" && !(uploadError instanceof Error) ? JSON.stringify(uploadError) : uploadError.toString()}</pre>
+        </div>
+    {/if}
 
     <table>
         <tbody>
@@ -193,5 +208,10 @@
     }
     table td {
         width: 50%;
+    }
+
+    .error {
+        border: 3px solid red;
+        padding: 5px;
     }
 </style>
