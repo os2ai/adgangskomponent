@@ -8,6 +8,8 @@ import path from "node:path";
 import crypto from "node:crypto";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import os from "node:os";
+import smacker from "smacker";
 
 const app = express();
 
@@ -26,7 +28,7 @@ app.post("/x509-parse", async (req, res) => {
 });
 
 app.post("/pem-key-conversion", async (req, res) => {
-    const opensslTmpDir = await fs.mkdtemp("os2adgang_openssl_tmp_dir");
+    const opensslTmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "os2adgang_openssl_tmp_dir"));
 
     /** @type {NodeJS.ProcessEnv} */
     const env = {};
@@ -151,4 +153,8 @@ function x509ParseAttribute(dat) {
     return result;
 }
 
-app.listen(5701);
+let server;
+smacker.start({
+    start: () => new Promise((resolve, reject) => server = app.listen(5701, (error) => error ? reject(error) : resolve())),
+    stop: () => new Promise((resolve, reject) => server ? server.close((error) => error ? reject(error) : resolve()) : resolve()),
+});
