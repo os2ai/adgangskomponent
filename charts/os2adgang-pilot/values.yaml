@@ -20,23 +20,12 @@ systems: []
   #  redirectUris: []
   #  postLogoutRedirectUris:
   #  webOrigins: []
-  #  protocol: openid-connect
-  #  roles: []
-  #  baseGroup:
-  #    clientRoles: []
-  #  groups: []
-  #    #- name:
-  #    #  description:
-  #    #  attributes: {}
-  #  # TODO: Naming: protocolMappers is obscure. Really means we add fields to OIDC tokens
-  #  protocolMappers: []
-  #    #- type:
-  #    #  attribute:
-  #    #  config: {}
-  #  fkaMappers: []
-  #    #- displayName:
+  #  claims: []
+  #    #- key:
   #    #  type:
-  #    #  config: {}
+  #    #  mappings:
+  #    #    #- entityId:
+  #    #    #  value:
 
 ingress:
   #annotations:ingressClassName: {{ .Values.ingressClassName }}
