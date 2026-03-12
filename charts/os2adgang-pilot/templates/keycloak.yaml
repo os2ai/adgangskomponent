@@ -20,3 +20,17 @@ spec:
   additionalOptions:
     - name: log-level
       value: INFO,org.keycloak.saml:TRACE,org.keycloak.protocol.saml:TRACE,org.keycloak.events:DEBUG,org.keycloak.services:TRACE,org.keycloak.broker:TRACE
+    - name: feature-scripts
+      value: enabled
+  unsupported:
+    podTemplate:
+      spec:
+        containers:
+          - volumeMounts:
+            - name: oidc-script-based-protocol-mapper
+              mountPath: /opt/keycloak/providers/oidc-script-based-protocol-mapper.jar
+              subPath: oidc-script-based-protocol-mapper.jar
+        volumes:
+          - name: oidc-script-based-protocol-mapper
+            configMap:
+              name: keycloak-oidc-script-based-protocol-mapper-configmap
