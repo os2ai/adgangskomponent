@@ -565,21 +565,21 @@ spec:
               claim.name: {{ $claim.key }}
               jsonType.label: String
               script: |
-                var ArrayList = Java.type(\"java.util.ArrayList\");
+                var ArrayList = Java.type("java.util.ArrayList");
                 var claimValues = new ArrayList();
 
-                var privilegesBase64 = user.getFirstAttribute(\"privileges\");
+                var privilegesBase64 = user.getFirstAttribute("privileges");
                 if(privilegesBase64) {
-                  var Base64 = Java.type(\"java.util.Base64\");
+                  var Base64 = Java.type("java.util.Base64");
                   var privilegesXmlBuffer = Base64.getDecoder().decode(privilegesBase64);
 
-                  var JavaString = Java.type(\"java.lang.String\");
-                  var StandardCharsets = Java.type(\"java.nio.charset.StandardCharsets\");
+                  var JavaString = Java.type("java.lang.String");
+                  var StandardCharsets = Java.type("java.nio.charset.StandardCharsets");
                   var privilegesXmlString = new JavaString(privilegesXmlBuffer, StandardCharsets.UTF_8);
 
                   {{- range $i, $mapping := $claim.mappings }}
-                  {{ if and (eq $claim.type "exclusive") (gt $i 0) }}else {{ end }}if(privilegesXmlString.contains(\"{{ $mapping.entityId }}\")) {
-                    claimValues.add(\"{{ $mapping.value }}\");
+                  {{ if and (eq $claim.type "exclusive") (gt $i 0) }}else {{ end }}if(privilegesXmlString.contains("{{ $mapping.entityId }}")) {
+                    claimValues.add("{{ $mapping.value }}");
                   }
                   {{- end }}
                 }
