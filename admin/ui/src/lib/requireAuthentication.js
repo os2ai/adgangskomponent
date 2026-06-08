@@ -212,7 +212,6 @@ export async function signin({ returnUrl, forceRelogin }) {
     console.error("Got error from getUser", error);
     return renderLoginError(error);
   }
-  console.log("signed in", u);
 
   postSignin(u, returnUrl, userManager);
 }

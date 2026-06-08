@@ -36,8 +36,6 @@
             throw error;
         }
 
-        console.log("e", pemResponse.data);
-
         const metadata = pemResponse.data.meta;
 
         // TODO: repeated validation from +page.svelte
