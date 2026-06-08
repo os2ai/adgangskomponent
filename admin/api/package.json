@@ -1,0 +1,20 @@
+{
+  "name": "adgangskomponent-admin-api",
+  "version": "0.0.0",
+  "description": "API for the Adgangskomponent Admin panel, allows easy access to relevant actions.",
+  "author": "deranged for OS2",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/start"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "pino-http": "^11.0.0",
+    "smacker": "^1.0.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}

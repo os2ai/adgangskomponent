@@ -1,0 +1,36 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak # TODO: naming of all resources should include release name
+spec:
+  instances: 2
+  ingress:
+{{ .Values.ingress | toYaml | indent 4 }}
+  db:
+{{ .Values.db | toYaml | indent 4 }}
+  # TODO: possible extraction of relationship between httpEnabled, ingress cert-manager, tls-secret
+  http:
+    httpEnabled: true
+  hostname:
+    hostname: {{ .Values.domain }}
+  proxy:
+    headers: xforwarded
+  update:
+    strategy: Auto
+  additionalOptions:
+    - name: log-level
+      value: INFO,org.keycloak.saml:TRACE,org.keycloak.protocol.saml:TRACE,org.keycloak.events:DEBUG,org.keycloak.services:TRACE,org.keycloak.broker:TRACE
+    - name: feature-scripts
+      value: enabled
+  unsupported:
+    podTemplate:
+      spec:
+        containers:
+          - volumeMounts:
+            - name: oidc-script-based-protocol-mapper
+              mountPath: /opt/keycloak/providers/oidc-script-based-protocol-mapper.jar
+              subPath: oidc-script-based-protocol-mapper.jar
+        volumes:
+          - name: oidc-script-based-protocol-mapper
+            configMap:
+              name: keycloak-oidc-script-based-protocol-mapper-configmap

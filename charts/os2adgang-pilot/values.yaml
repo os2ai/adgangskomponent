@@ -1,0 +1,54 @@
+domain:
+
+realm:
+  name:
+  displayName:
+  test: false
+
+systems: []
+  #- name:
+  #  displayName:
+  #  description:
+  #  rootUrl:
+  #  adminUrl:
+  #  baseUrl:
+  #  # TODO: should be generated instead of being set here - but we also need to inject in client systems.
+  #  # We probably need a better approach than simple templating.
+  #  # An operator creates secrets on demand perhaps?
+  #  secret:
+  #  secretGenerationTime:
+  #  redirectUris: []
+  #  postLogoutRedirectUris:
+  #  webOrigins: []
+  #  claims: []
+  #    #- key:
+  #    #  type:
+  #    #  mappings:
+  #    #    #- entityId:
+  #    #    #  value:
+
+ingress:
+  #annotations:ingressClassName: {{ .Values.ingressClassName }}
+  #  cert-manager.io/cluster-issuer: letsencrypt
+  #tlsSecret: keycloak-tls-secret
+  #className:
+db:
+  #vendor: postgres
+  #host: cloudnative-pg-cluster-rw
+  #database: os2adgang
+  #usernameSecret:
+  #  name: cloudnative-pg-cluster-admin
+  #  key: username
+  #passwordSecret:
+  #  name: cloudnative-pg-cluster-admin
+  #  key: password
+
+admin:
+  ui:
+    #domain:
+    image:
+      repository: registry.eu-1.deranged.dk/recloud-public/os2/os2adgang-pilot/admin-ui
+  api:
+    #domain:
+    image:
+      repository: registry.eu-1.deranged.dk/recloud-public/os2/os2adgang-pilot/admin-api
