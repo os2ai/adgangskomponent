@@ -3,15 +3,12 @@ FROM node:24.16.0-slim@sha256:cbd8bcbdfd0d148205c9449dff3ca3c9c94d73f393a0e03ef1
 
 RUN apt update -y && apt install openssl -y && apt clean && rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV=production
-
 WORKDIR /app
 
+ENV NODE_ENV=production
 COPY package.json package-lock.json ./
-
 RUN npm ci && npm cache clean --force
 
 COPY src src
-
 USER node
 CMD ["node", "src/start.js"]
