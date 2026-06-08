@@ -141,13 +141,15 @@ app.post("/pem-key-conversion", async (req, res) => {
 });
 
 /**
- * @param {string} dat
+ * @param {string} data
  * @returns {Record<string, string>}
  */
-function x509ParseAttribute(dat) {
+function x509ParseAttribute(data) {
     /** @type {ReturnType<typeof x509ParseAttribute>} */
     const result = {};
-    for (const [key, value] of dat.split("\n").map((line) => line.split("="))) {
+
+    for (const line of data.split("\n")) {
+        const [ key, value ] = line.split("=");
         result[key] = value;
     }
     return result;
