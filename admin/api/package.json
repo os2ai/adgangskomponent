@@ -2,7 +2,6 @@
   "name": "adgangskomponent-admin-api",
   "version": "0.0.0",
   "description": "",
-  "license": "ISC",
   "author": "deranged for OS2",
   "type": "module",
   "main": "index.js",
