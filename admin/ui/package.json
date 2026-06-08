@@ -1,5 +1,6 @@
 {
 	"name": "adgangskomponent-admin-ui",
+	"description": "UI for the Adgangskomponent admin panel. Allows easy actions for managing Adgangskomponent setup.",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",

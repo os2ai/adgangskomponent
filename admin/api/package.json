@@ -1,7 +1,7 @@
 {
   "name": "adgangskomponent-admin-api",
   "version": "0.0.0",
-  "description": "",
+  "description": "API for the Adgangskomponent Admin panel, allows easy access to relevant actions.",
   "author": "deranged for OS2",
   "type": "module",
   "main": "index.js",
