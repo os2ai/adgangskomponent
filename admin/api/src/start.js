@@ -155,8 +155,31 @@ function x509ParseAttribute(data) {
     return result;
 }
 
+/** @type {import("http").Server | undefined} */
 let server;
+
 smacker.start({
-    start: () => new Promise((resolve, reject) => server = app.listen(5701, (error) => error ? reject(error) : resolve())),
-    stop: () => new Promise((resolve, reject) => server ? server.close((error) => error ? reject(error) : resolve()) : resolve()),
+    start: () => {
+        return new Promise((resolve, reject) => {
+            server = app.listen(5701, (error) => {
+                if(error) {
+                    return reject(error);
+                }
+                resolve();
+            });
+        });
+    },
+    stop: () => {
+        return new Promise((resolve, reject) => {
+            if(!server) {
+                return resolve();
+            }
+            server.close((error) => {
+                if(error) {
+                    return reject(error);
+                }
+                resolve();
+            });
+        });
+    },
 });
