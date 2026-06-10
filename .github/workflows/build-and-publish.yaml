@@ -34,7 +34,7 @@ jobs:
 
           echo "Checking if helm chart exists: $NAME $VERSION (${{ steps.meta.outputs.tags }})"
 
-          declare REPO="oci://${{ env.REGISTRY }}/${{ github.repository }}/adgangskomponent-chart"
+          declare REPO="oci://${{ env.REGISTRY }}/${{ github.repository }}"
 
           set +e
           # we check if the image and version already exists
