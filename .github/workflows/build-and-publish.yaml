@@ -33,8 +33,8 @@ jobs:
           yq -i ".version = \"$VERSION\"" Chart.yaml;
 
           # Override repository references in values file to this repository
-          yq -i ".admin.ui.image.repostiory = ${{ env.REGISTRY }}/${{ github.repository }}/admin-ui"
-          yq -i ".admin.api.image.repostiory = ${{ env.REGISTRY }}/${{ github.repository }}/admin-api"
+          yq -i ".admin.ui.image.repostiory = \"${{ env.REGISTRY }}/${{ github.repository }}/admin-ui\"" values.yaml
+          yq -i ".admin.api.image.repostiory = \"${{ env.REGISTRY }}/${{ github.repository }}/admin-api\"" values.yaml
 
           echo "Checking if helm chart exists: $NAME $VERSION (${{ steps.meta.outputs.tags }})"
 
