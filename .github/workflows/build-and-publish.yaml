@@ -9,21 +9,11 @@ env:
 name: Build and publish Adgangskomponent
 jobs:
   chart:
-    name: Build and publish Adgangskomponent Chart
+    name: Helm Chart - build and publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          flavor: |
-            latest=false
-          images: ${{ env.REGISTRY }}/${{ github.repository }}-admin-ui
-          tags: |
-            type=semver,pattern={{version}}
-            type=raw,value=latest
       - name: Install helm
         uses: azure/setup-helm@v3
         with:
@@ -41,7 +31,7 @@ jobs:
 
           echo "Checking if helm chart exists: $NAME $VERSION (${{ steps.meta.outputs.tags }})"
 
-          declare REPO="oci://${{ env.REGISTRY }}/${{ github.repository }}-chart"
+          declare REPO="oci://${{ env.REGISTRY }}/${{ github.repository }}/adgangskomponent-chart"
 
           set +e
           # we check if the image and version already exists
@@ -65,7 +55,7 @@ jobs:
           echo "Helm chart built and pushed";
 
   admin-ui:
-    name: Build and publish Adgangskomponent Adminpanel UI image
+    name: Adminpanel UI image - build and publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -76,7 +66,7 @@ jobs:
         with:
           flavor: |
             latest=false
-          images: ${{ env.REGISTRY }}/${{ github.repository }}-admin-ui
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/admin-ui
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest
@@ -95,7 +85,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   admin-api:
-    name: Build and publish Adgangskomponent Adminpanel API image
+    name: Adminpanel API image - build and publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -106,7 +96,7 @@ jobs:
         with:
           flavor: |
             latest=false
-          images: ${{ env.REGISTRY }}/${{ github.repository }}-admin-api
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/admin-api
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest
