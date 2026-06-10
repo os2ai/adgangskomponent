@@ -1,0 +1,125 @@
+on:
+  push:
+    tags:
+      - "*"
+
+env:
+  REGISTRY: ghcr.io
+
+name: Build and publish Adgangskomponent
+jobs:
+  chart:
+    name: Build and publish Adgangskomponent Chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          flavor: |
+            latest=false
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-admin-ui
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+      - name: Install helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 4.2.0
+      - name: Build Chart
+        working-directory: charts/os2adgang-pilot/
+        run: |
+          declare NAME
+          declare VERSION
+          NAME=$(yq '.name' < Chart.yaml)
+          VERSION=`git describe --always --tags`
+
+          # Override version in Chart
+          yq -i ".version = \"$VERSION\"" Chart.yaml;
+
+          echo "Checking if helm chart exists: $NAME $VERSION (${{ steps.meta.outputs.tags }})"
+
+          declare REPO="oci://${{ env.REGISTRY }}/${{ github.repository }}-chart"
+
+          set +e
+          # we check if the image and version already exists
+          helm pull --username ${{ github.actor }} --password "${{ secrets.GITHUB_TOKEN }}" --repo "$REPO" --version "$VERSION" "$NAME"
+          declare IMAGE_FOUND_STATUS=$?
+          set -e
+
+          if [ $IMAGE_FOUND_STATUS == 0 ]; then
+              # seems image was already pushed, so we exit
+              echo "Chart exists - not pushing new chart";
+              exit 0
+          fi
+          echo "Chart does not exist in registry - building new helm chart";
+
+          helm dependencies update || true
+          helm package .
+
+          declare PACKAGE=$NAME-$VERSION.tgz
+          helm push --username ${{ github.actor }} --password "${{ secrets.GITHUB_TOKEN }}" $PACKAGE $REPO
+
+          echo "Helm chart built and pushed";
+
+  admin-ui:
+    name: Build and publish Adgangskomponent Adminpanel UI image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          flavor: |
+            latest=false
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-admin-ui
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+      - name: Login to registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: admin/ui/
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  admin-api:
+    name: Build and publish Adgangskomponent Adminpanel API image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          flavor: |
+            latest=false
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-admin-api
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+      - name: Login to registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: admin/api/
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
