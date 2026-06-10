@@ -32,6 +32,10 @@ jobs:
           # Override version in Chart
           yq -i ".version = \"$VERSION\"" Chart.yaml;
 
+          # Override repository references in values file to this repository
+          yq -i ".admin.ui.image.repostiory = ${{ env.REGISTRY }}/${{ github.repository }}/admin-ui"
+          yq -i ".admin.api.image.repostiory = ${{ env.REGISTRY }}/${{ github.repository }}/admin-api"
+
           echo "Checking if helm chart exists: $NAME $VERSION (${{ steps.meta.outputs.tags }})"
 
           declare REPO="oci://${{ env.REGISTRY }}/${{ github.repository }}"

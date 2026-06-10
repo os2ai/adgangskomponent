@@ -47,8 +47,8 @@ admin:
   ui:
     #domain:
     image:
-      repository: registry.eu-1.deranged.dk/recloud-public/os2/os2adgang-pilot/admin-ui
+      repository: ghcr.io/os2ai/adgangskomponent/admin-ui
   api:
     #domain:
     image:
-      repository: registry.eu-1.deranged.dk/recloud-public/os2/os2adgang-pilot/admin-api
+      repository: ghcr.io/os2ai/adgangskomponent/admin-api
