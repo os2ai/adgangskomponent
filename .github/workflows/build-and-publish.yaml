@@ -53,6 +53,9 @@ jobs:
           fi
           echo "Chart does not exist in registry - building new helm chart";
 
+          # Build the provider jar (a plain zip of the provider sources) so the packaged chart contains it
+          (cd files/providers/oidc-script-based-protocol-mapper && zip -q -X -r ../oidc-script-based-protocol-mapper.jar .)
+
           helm dependencies update || true
           helm package .
 
