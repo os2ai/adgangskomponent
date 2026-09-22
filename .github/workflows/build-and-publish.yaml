@@ -53,8 +53,20 @@ jobs:
           fi
           echo "Chart does not exist in registry - building new helm chart";
 
-          # Build the provider jar (a plain zip of the provider sources) so the packaged chart contains it
-          (cd files/providers/oidc-script-based-protocol-mapper && zip -q -X -r ../oidc-script-based-protocol-mapper.jar .)
+          # Build the provider jar (a plain zip of the provider sources) so the packaged chart contains it.
+          # Deterministic: fixed mtimes (1980-01-01), sorted file order, no extra fields, UTC -
+          # anyone can rebuild from the tag and compare sha256 against the chart annotations below.
+          declare JAR=files/providers/oidc-script-based-protocol-mapper.jar
+          declare JAR_SRC="${JAR%.jar}"
+          TZ=UTC find "$JAR_SRC" -exec touch -h -t 198001010000 {} +
+          (cd "$JAR_SRC" && TZ=UTC find . -type f | sort | TZ=UTC zip -q -X -D -@ "../$(basename "$JAR")")
+
+          # Record digests in the chart (Chart.yaml annotations, visible via `helm inspect chart`)
+          declare JAR_SHA
+          JAR_SHA=$(sha256sum "$JAR" | cut -d' ' -f1)
+          yq -i ".annotations.\"org.opencontainers.image.revision\" = \"${{ github.sha }}\"" Chart.yaml
+          yq -i ".annotations.\"dk.os2ai.provider-jar-sha256\" = \"$JAR_SHA\"" Chart.yaml
+          echo "Provider jar sha256: $JAR_SHA"
 
           helm dependencies update || true
           helm package .
