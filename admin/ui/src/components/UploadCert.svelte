@@ -106,8 +106,14 @@
             await api.delete(`/realms/${realm}/components/${signingProvider.id}`);
         }
 
+
+        const providers = [
+            { name: "rsa", alg: "RS256", priority: "2" },
+            { name: "rsa-enc", alg: "RSA-OAEP", priority: "1" }
+        ];
+
         // Create new providers
-        for(const { name, alg } of [ { name: "rsa", alg: "RS256" }, { name: "rsa-enc", alg: "RSA-OAEP" } ]) {
+        for(const { name, alg, priority } of providers) {
             await api.post(`/realms/${realm}/components`, {
                 name,
                 providerId: name,
@@ -117,7 +123,7 @@
                     privateKey: [ privateKeyData ],
                     certificate: [ certData ],
                     active: [ "true" ],
-                    priority: [ "0" ],
+                    priority: [ priority ],
                     enabled: [ "true" ],
                     algorithm: [ alg ],
                 },
