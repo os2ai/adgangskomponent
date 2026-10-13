@@ -14,6 +14,7 @@ This results in the role and groups being properly synched correctly and latent 
 
 ### Fixed
 
+* **[Add priority to certificates when uploaded.](https://github.com/os2ai/adgangskomponent/pull/28)** The signing KeyDescriptor is now listed before the encryption KeyDescriptor.
 * **[Minor typo in chart build workflow.](https://github.com/os2ai/adgangskomponent/commit/95b5c904d98ab3ae38795b9a773899a4b009d75d)** This never allowed for the override function it procalimed to facilitate due to a typo in the jq command.
 
 ## [1.0.0]
