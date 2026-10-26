@@ -1,7 +1,7 @@
-# https://hub.docker.com/layers/library/node/24.16.0-slim/images/sha256-cbd8bcbdfd0d148205c9449dff3ca3c9c94d73f393a0e03ef1c8d3846c5038bf
-FROM node:24.16.0-slim@sha256:cbd8bcbdfd0d148205c9449dff3ca3c9c94d73f393a0e03ef1c8d3846c5038bf
+# https://hub.docker.com/layers/library/node/24.22.1-slim/images/sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205
+FROM node:24.22.1-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205
 
-RUN apt update -y && apt install openssl -y && apt clean && rm -rf /var/lib/apt/lists/*
+RUN apt update -y && apt upgrade -y && apt install openssl -y && apt clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
