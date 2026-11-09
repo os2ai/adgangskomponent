@@ -1,0 +1,62 @@
+# Values exercising the cluster-tooling login setup from
+# https://github.com/os2ai/helm-deployments/issues/80#issuecomment-6684083324:
+# FKA-authenticated users gated by the `cluster-admins` group for Grafana and Argo CD.
+# Used by scripts/validate-keycloak.sh; not a production values file.
+domain: keycloak.localtest.me
+realm:
+  name: validation
+  displayName: Validation
+  test: true
+
+groups:
+  - name: cluster-admins
+
+clientScopes:
+  - name: cluster-groups
+    description: Group membership claim for gating cluster tooling access
+    groupMembershipMappers:
+      - name: groups
+        claim: groups
+
+systems:
+  - name: grafana
+    displayName: Grafana
+    description: Grafana login via Adgangskomponenten
+    rootUrl: https://grafana.example.org
+    baseUrl: https://grafana.example.org
+    secret: validation-secret-grafana
+    secretGenerationTime: "2026-11-09 00:00:00"
+    redirectUris:
+      - https://grafana.example.org/login/generic_oauth
+    postLogoutRedirectUris: https://grafana.example.org
+    webOrigins: []
+    clientScopes:
+      - cluster-groups
+    claims: []
+  - name: argocd
+    displayName: Argo CD
+    description: Argo CD UI login via Adgangskomponenten
+    rootUrl: https://argocd.example.org
+    baseUrl: https://argocd.example.org
+    secret: validation-secret-argocd
+    secretGenerationTime: "2026-11-09 00:00:00"
+    redirectUris:
+      - https://argocd.example.org/auth/callback
+    postLogoutRedirectUris: https://argocd.example.org
+    webOrigins: []
+    clientScopes:
+      - cluster-groups
+    claims: []
+  # Public client for `argocd login --sso` (loopback redirect, PKCE).
+  - name: argocd-cli
+    displayName: Argo CD CLI
+    description: Argo CD CLI login via Adgangskomponenten
+    rootUrl: https://argocd.example.org
+    publicClient: true
+    redirectUris:
+      - http://127.0.0.1:*
+      - http://localhost:*
+    webOrigins: []
+    clientScopes:
+      - cluster-groups
+    claims: []

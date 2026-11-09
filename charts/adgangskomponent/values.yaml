@@ -17,15 +17,35 @@ systems: []
   #  # An operator creates secrets on demand perhaps?
   #  secret:
   #  secretGenerationTime:
+  #  # publicClient: true for clients without a secret, e.g. the Argo CD CLI (`argocd login --sso`).
+  #  publicClient: false
   #  redirectUris: []
   #  postLogoutRedirectUris:
   #  webOrigins: []
+  #  # Extra client scopes attached as default scopes, e.g. cluster-groups - the scope carrying
+  #  # the group membership claim used to gate cluster tooling logins (see clientScopes below).
+  #  clientScopes: []
   #  claims: []
   #    #- key:
   #    #  type:
   #    #  mappings:
   #    #    #- entityId:
   #    #    #  value:
+
+# Realm groups, e.g. the group gating access to cluster tooling (Grafana, Argo CD):
+# groups:
+#   - name: cluster-admins
+groups: []
+
+# Extra realm client scopes. Each scope can carry group membership mappers; full group path
+# is always off so clients match on the plain group name, e.g.:
+# clientScopes:
+#   - name: cluster-groups
+#     description: Group membership claim for gating cluster tooling access
+#     groupMembershipMappers:
+#       - name: groups
+#         claim: groups
+clientScopes: []
 
 ingress:
   #annotations:ingressClassName: {{ .Values.ingressClassName }}

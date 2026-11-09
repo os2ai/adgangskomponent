@@ -290,7 +290,12 @@ spec:
             composite: false
             clientRole: true
             attributes: {}
-    groups: []
+    groups:
+      {{- range $group := .Values.groups }}
+      - name: {{ $group.name }}
+      {{- else }}
+      []
+      {{- end }}
     defaultRole:
       name: default-roles-{{ .Values.realm.name }}
       description: ${role_default-roles}
@@ -520,7 +525,9 @@ spec:
         enabled: true
         alwaysDisplayInConsole: false
         clientAuthenticatorType: client-secret # TODO: client-secret if secret provided, otherwise with no secret?
+        {{- if not $system.publicClient }}
         secret: {{ $system.secret }} # TODO: get from secret via placeholder env? https://www.keycloak.org/operator/realm-import#_placeholders
+        {{- end }}
         redirectUris:
 {{ $system.redirectUris | toYaml | indent 10 }}
         webOrigins:
@@ -532,13 +539,15 @@ spec:
         implicitFlowEnabled: false
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: false
-        publicClient: false
+        publicClient: {{ if $system.publicClient }}true{{ else }}false{{ end }}
         frontchannelLogout: true
         protocol: openid-connect
         attributes:
           realm_client: "false"
           oidc.ciba.grant.enabled: "false"
+          {{- if not $system.publicClient }}
           client.secret.creation.time: "{{ $system.secretGenerationTime }}"
+          {{- end }}
           backchannel.logout.session.required: "true"
           standard.token.exchange.enabled: "false"
           oauth2.jwt.authorization.grant.enabled: "false"
@@ -546,6 +555,10 @@ spec:
           oauth2.device.authorization.grant.enabled: "false"
           backchannel.logout.revoke.offline.tokens: "false"
           dpop.bound.access.tokens: "false"
+          {{- if $system.publicClient }}
+          # Public clients (e.g. argocd CLI login) must use PKCE.
+          pkce.code.challenge.method: S256
+          {{- end }}
         authenticationFlowBindingOverrides: {}
         fullScopeAllowed: true
         nodeReRegistrationTimeout: -1
@@ -592,6 +605,9 @@ spec:
           - roles
           - basic
           - email
+          {{- range $scope := $system.clientScopes }}
+          - {{ $scope }}
+          {{- end }}
         optionalClientScopes:
           - address
           - phone
@@ -1175,6 +1191,27 @@ spec:
               introspection.token.claim: "true"
               access.token.claim: "true"
               userinfo.token.claim: "true"
+      {{- range $scope := .Values.clientScopes }}
+      - name: {{ $scope.name }}
+        description: {{ $scope.description }}
+        protocol: openid-connect
+        attributes:
+          include.in.token.scope: "false"
+          display.on.consent.screen: "false"
+        protocolMappers:
+          {{- range $mapper := $scope.groupMembershipMappers }}
+          - name: {{ $mapper.name }}
+            protocol: openid-connect
+            protocolMapper: oidc-group-membership-mapper
+            consentRequired: false
+            config:
+              claim.name: {{ $mapper.claim }}
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "true"
+              userinfo.token.claim: "true"
+          {{- end }}
+      {{- end }}
     defaultDefaultClientScopes:
       - role_list
       - saml_organization
