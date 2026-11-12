@@ -8,8 +8,32 @@ env:
 
 name: Build and publish Adgangskomponent
 jobs:
+  scan-images:
+    # Release gate: known critical CVEs in the freshly built images block the
+    # chart (the release artifact) from being published. See also
+    # .github/workflows/image-scan.yaml for the daily scan of latest images.
+    name: Scan images - release gate
+    needs: [admin-ui, admin-api]
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [admin-ui, admin-api]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Scan ${{ matrix.image }}:${{ github.ref_name }}
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 #v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ github.ref_name }}
+          format: table
+          severity: CRITICAL
+          exit-code: "1"
+
   chart:
     name: Helm Chart - build and publish
+    needs: scan-images
     runs-on: ubuntu-latest
     permissions:
       contents: read

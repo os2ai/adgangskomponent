@@ -6,6 +6,10 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ## [Unreleased]
 
+### Added
+
+* **[Container image scanning.](https://github.com/os2ai/adgangskomponent/issues/17)** Releases are now gated: after `admin-ui`/`admin-api` are built, the chart push waits on a Trivy scan of both images for CRITICAL CVEs (exit-code 1). A daily scheduled workflow scans the latest admin images plus the upstream keycloak/keycloak-operator images the chart points at; a red run signals a needed image update or pin.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.

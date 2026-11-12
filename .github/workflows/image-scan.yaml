@@ -1,0 +1,37 @@
+on:
+  schedule:
+    # Daily, 05:17 UTC - off the top of the hour.
+    - cron: "17 5 * * *"
+  workflow_dispatch: {}
+
+name: Daily image scan
+# Daily CVE scan of the images the platform points at: the admin images built
+# here plus the upstream keycloak images the chart defaults to. A red
+# scheduled run = investigate and update the affected image or pin. The
+# release-blocking scan of freshly built images lives in build-and-publish.yaml.
+jobs:
+  scan:
+    name: Scan ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["admin-ui", "admin-api", "keycloak-operator", "keycloak"]
+    steps:
+      - name: Resolve image
+        id: image
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          case "$IMAGE" in
+            admin-ui|admin-api) echo "ref=ghcr.io/os2ai/adgangskomponent/$IMAGE:latest" >> "$GITHUB_OUTPUT" ;;
+            keycloak-operator) echo "ref=quay.io/keycloak/keycloak-operator:latest" >> "$GITHUB_OUTPUT" ;;
+            keycloak) echo "ref=quay.io/keycloak/keycloak:latest" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Scan
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 #v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.ref }}
+          format: table
+          severity: CRITICAL
+          exit-code: "1"
