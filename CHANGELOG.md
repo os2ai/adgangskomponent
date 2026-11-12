@@ -6,6 +6,10 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ## [Unreleased]
 
+### Added
+
+* **[Configurable ingress annotations and class.](https://github.com/os2ai/adgangskomponent/issues/13)** The admin UI and API ingresses accept per-component `admin.ui.ingress` / `admin.api.ingress` (`className`, `annotations`) merged over the chart-wide `ingress:` block; per-component values win on conflicts. The previously hardcoded `nginx.ingress.kubernetes.io/proxy-body-size` annotation is now only emitted for the nginx ingress class (the Traefik default in OS2ai should use its buffering middleware instead) and its size is settable via `admin.api.maxBodySize`.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.

@@ -1,17 +1,24 @@
+{{- $admin := .Values.admin | default dict }}
+{{- $ui := get $admin "ui" | default dict }}
+{{- $uiIngress := get $ui "ingress" | default dict }}
+{{- $globalIngress := .Values.ingress | default dict }}
+{{- $className := get $uiIngress "className" | default (get $globalIngress "className") }}
+{{- $annotations := dict }}
+{{- $_ := merge $annotations (get $uiIngress "annotations" | default dict) (get $globalIngress "annotations" | default dict) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.admin.ui.domain | default (print "admin." .Values.domain) }}
-  {{- if and .Values.ingress .Values.ingress.annotations }}
+  name: {{ get $ui "domain" | default (print "admin." .Values.domain) }}
+  {{- with $annotations }}
   annotations:
-{{ .Values.ingress.annotations | toYaml | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if and .Values.ingress .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
+  {{- with $className }}
+  ingressClassName: {{ . }}
   {{- end }}
   rules:
-    - host: {{ .Values.admin.ui.domain | default (print "admin." .Values.domain) }}
+    - host: {{ get $ui "domain" | default (print "admin." .Values.domain) }}
       http:
         paths:
           - path: /
@@ -23,5 +30,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - {{ .Values.admin.ui.domain | default (print "admin." .Values.domain) }}
-      secretName: {{ .Values.admin.ui.domain | default (print "admin." .Values.domain) }}-tls
+        - {{ get $ui "domain" | default (print "admin." .Values.domain) }}
+      secretName: {{ get $ui "domain" | default (print "admin." .Values.domain) }}-tls
