@@ -31,3 +31,6 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 2
           failureThreshold: 3
+        env:
+        - name: CORS_ALLOWED_ORIGINS
+          value: {{ .Values.admin.api.corsAllowedOrigins | default (printf "https://%s" (.Values.admin.ui.domain | default (print "admin." .Values.domain))) | quote }}

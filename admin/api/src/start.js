@@ -18,7 +18,19 @@ app.use(pinoHttp({
         ignore: (req) => req.url === "/healthz",
     },
 }));
-app.use(cors());
+
+// Only the admin panel frontend legitimately calls this API cross-origin.
+// CORS_ALLOWED_ORIGINS is a comma-separated allow-list rendered by the
+// chart (default: the admin UI origin). An empty value means no CORS at
+// all - same-origin requests only.
+const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+if(corsAllowedOrigins.length) {
+    app.use(cors({ origin: corsAllowedOrigins }));
+}
 
 // Liveness/readiness endpoint, used by the chart's probes.
 app.get("/healthz", (req, res) => {

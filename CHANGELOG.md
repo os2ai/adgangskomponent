@@ -19,6 +19,7 @@ Both Dockerfiles pin the tag together with the matching amd64 child manifest dig
 of node:26.13.1-slim.
 
 * **[Bump nginx to 1.31.8.](https://github.com/os2ai/adgangskomponent/pull/30)** The admin UI runtime image moves from nginx 1.31.1 to 1.31.8, pinned by manifest digest. The admin API image additionally runs `apt upgrade` before installing openssl, so it picks up base-image security fixes at build time.
+* **[CORS restricted to configured origins.](https://github.com/os2ai/adgangskomponent/issues/8)** The admin API no longer answers with `Access-Control-Allow-Origin: *`. Origins come from `admin.api.corsAllowedOrigins` (comma-separated), defaulting to the admin UI origin only; an empty value disables CORS entirely.
 
 ### Security
 
