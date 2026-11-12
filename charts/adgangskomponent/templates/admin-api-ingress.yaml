@@ -1,18 +1,28 @@
+{{- $admin := .Values.admin | default dict }}
+{{- $api := get $admin "api" | default dict }}
+{{- $apiIngress := get $api "ingress" | default dict }}
+{{- $globalIngress := .Values.ingress | default dict }}
+{{- $className := get $apiIngress "className" | default (get $globalIngress "className") }}
+{{- $annotations := dict }}
+{{- $_ := merge $annotations (get $apiIngress "annotations" | default dict) (get $globalIngress "annotations" | default dict) }}
+{{- /* Body-size limit follows the ingress class: nginx needs proxy-body-size, traefik uses the buffering middleware CRD instead. */}}
+{{- if or (not $className) (eq $className "nginx") }}
+{{- $_ := set $annotations "nginx.ingress.kubernetes.io/proxy-body-size" (get $api "maxBodySize" | default "50m") }}
+{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
+  name: {{ get $api "domain" | default (print "api.admin." .Values.domain) }}
+  {{- with $annotations }}
   annotations:
-    {{- if and .Values.ingress .Values.ingress.annotations }}
-{{ .Values.ingress.annotations | toYaml | indent 4 }}
-    {{- end }}
-    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  {{- if and .Values.ingress .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
+  {{- with $className }}
+  ingressClassName: {{ . }}
   {{- end }}
   rules:
-    - host: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
+    - host: {{ get $api "domain" | default (print "api.admin." .Values.domain) }}
       http:
         paths:
           - path: /
@@ -24,5 +34,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}
-      secretName: {{ .Values.admin.api.domain | default (print "api.admin." .Values.domain) }}-tls
+        - {{ get $api "domain" | default (print "api.admin." .Values.domain) }}
+      secretName: {{ get $api "domain" | default (print "api.admin." .Values.domain) }}-tls
