@@ -10,6 +10,8 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 * **[Health checks on admin frontend and API.](https://github.com/os2ai/adgangskomponent/issues/10)** Both admin deployments now expose named `http` ports and readiness/liveness probes against `/healthz`. The API serves `GET /healthz` directly (with access logging suppressed for it); the UI's nginx answers `= /healthz` with 200 without access logs. API behavior covered by the new `admin/api` test suite (`npm test`), run on pull requests.
 
+* **[Setup guide.](https://github.com/os2ai/adgangskomponent/issues/11)** `docs/Setup.md` transfers the set up guide into the repository: prerequisites, provider jar build, minimal values, installation, FKA certificate requisition and upload, connecting an OIDC system, troubleshooting. The admin frontend's certificate upload section links straight to the certificate section of the guide.
+
 ### Changed
 
 * **[Upgrade Node.js to 26.13.1.](https://github.com/os2ai/adgangskomponent/pull/34)**
