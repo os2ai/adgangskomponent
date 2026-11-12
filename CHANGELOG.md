@@ -6,6 +6,10 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ## [Unreleased]
 
+### Added
+
+* **[Health checks on admin frontend and API.](https://github.com/os2ai/adgangskomponent/issues/10)** Both admin deployments now expose named `http` ports and readiness/liveness probes against `/healthz`. The API serves `GET /healthz` directly (with access logging suppressed for it); the UI's nginx answers `= /healthz` with 200 without access logs. API behavior covered by the new `admin/api` test suite (`npm test`), run on pull requests.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.
