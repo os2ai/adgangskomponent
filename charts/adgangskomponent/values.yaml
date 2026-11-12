@@ -48,7 +48,25 @@ admin:
     #domain:
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-ui
+    # Small static asset server; the built-in defaults are deliberately tiny.
+    #resources:
+    #  requests:
+    #    cpu: 10m
+    #    memory: 64Mi
+    #  limits:
+    #    cpu: 250m
+    #    memory: 256Mi
   api:
     #domain:
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-api
+    # Small API; the built-in defaults are deliberately tiny. Note it shells
+    # out to openssl for certificate conversion - give it a bit more if
+    # certificate uploads are slow.
+    #resources:
+    #  requests:
+    #    cpu: 10m
+    #    memory: 64Mi
+    #  limits:
+    #    cpu: 250m
+    #    memory: 256Mi
