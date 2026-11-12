@@ -6,6 +6,10 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ## [Unreleased]
 
+### Added
+
+* **[Setup guide.](https://github.com/os2ai/adgangskomponent/issues/11)** `docs/Setup.md` transfers the set up guide into the repository: prerequisites, provider jar build, minimal values, installation, FKA certificate requisition and upload, connecting an OIDC system, troubleshooting. The admin frontend's certificate upload section links straight to the certificate section of the guide.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.
