@@ -6,6 +6,10 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ## [Unreleased]
 
+### Added
+
+* **[Resource requests and limits on admin deployments.](https://github.com/os2ai/adgangskomponent/issues/9)** The admin UI and API containers get deliberately small defaults (requests 10m/64Mi, limits 250m/256Mi), overridable via `admin.ui.resources` / `admin.api.resources` in values. These are small workloads and should not schedule without a request.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.
