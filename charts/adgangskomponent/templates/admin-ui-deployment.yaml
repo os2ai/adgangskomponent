@@ -14,6 +14,24 @@ spec:
       containers:
       - name: admin-ui
         image: {{ .Values.admin.ui.image.repository }}:{{ .Values.admin.ui.image.tag | default .Chart.Version }}
+        ports:
+        - name: http
+          containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
         env:
         - name: PUBLIC_OIDC_AUTH_CLIENT_ID
           value: admin-panel-client
