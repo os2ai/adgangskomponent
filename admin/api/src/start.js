@@ -16,8 +16,48 @@ const app = express();
 app.use(pinoHttp());
 app.use(cors());
 
-app.post("/x509-parse", async (req, res) => {
-    const x509Cert = new crypto.X509Certificate(await streamToBuffer(req));
+/**
+ * Wrap an async route so rejections reach our error handler instead of
+ * Express' implicit behaviour.
+ * @param {(req: import("express").Request, res: import("express").Response) => Promise<void>} handler
+ * @returns {import("express").RequestHandler}
+ */
+function asyncRoute(handler) {
+    return (req, res, next) => {
+        handler(req, res).catch(next);
+    };
+}
+
+/**
+ * Deliberate, safe-to-show-to-the-client error.
+ */
+class ClientError extends Error {
+    /**
+     * @param {number} status
+     * @param {string} message
+     */
+    constructor(status, message) {
+        super(message);
+        this.status = status;
+    }
+}
+
+app.post("/x509-parse", asyncRoute(async (req, res) => {
+    const body = await streamToBuffer(req);
+    if(body.byteLength === 0) {
+        throw new ClientError(400, "Request body is empty; expected a PEM-encoded X.509 certificate.");
+    }
+
+    /** @type {crypto.X509Certificate} */
+    let x509Cert;
+    try {
+        x509Cert = new crypto.X509Certificate(body);
+    }
+    catch {
+        // Do not surface the Node error verbatim: its message embeds the
+        // offending input. State the problem, not the internals.
+        throw new ClientError(400, "Could not parse the supplied data as an X.509 certificate.");
+    }
 
     res.send({
         issuer: x509ParseAttribute(x509Cert.issuer),
@@ -25,9 +65,9 @@ app.post("/x509-parse", async (req, res) => {
         validFrom: x509Cert.validFromDate.getTime(),
         validTo: x509Cert.validToDate.getTime(),
     });
-});
+}));
 
-app.post("/pem-key-conversion", async (req, res) => {
+app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
     const opensslTmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "os2adgang_openssl_tmp_dir"));
 
     /** @type {NodeJS.ProcessEnv} */
@@ -87,8 +127,8 @@ app.post("/pem-key-conversion", async (req, res) => {
     const opensslPrivateKeyCleanupErrorsPromise = opensslPrivateKeyCleanupProcess.stderr ? streamToText(opensslPrivateKeyCleanupProcess.stderr) : "";
 
     await Promise.all([
-        new Promise((resolve) => opensslCertExtractProcess.once("exit", resolve)),
-        new Promise((resolve) => opensslPrivateKeyExtractProcess.once("exit", resolve)),
+        new Promise((resolve) => opensslCertExtractProcess.once("exit", resolve).once("error", resolve)),
+        new Promise((resolve) => opensslPrivateKeyExtractProcess.once("exit", resolve).once("error", resolve)),
     ]);
 
     const opensslCertExtractOutput = await opensslCertExtractOutputPromise;
@@ -104,29 +144,45 @@ app.post("/pem-key-conversion", async (req, res) => {
 
     req.log.info("Processes concluded, files cleaned up");
 
+    // openssl may not be present at all (spawn ENOENT): that is a server
+    // fault, not a bad certificate - report it without details.
+    if(opensslCertExtractProcess.exitCode === null && opensslPrivateKeyExtractProcess.exitCode === null) {
+        throw new ClientError(500, "Certificate conversion is unavailable on this server.");
+    }
+
     const errors = [];
     if(opensslCertExtractProcess.exitCode) {
         errors.push({
             process: "openssl x509 -nokeys",
             exitcode: opensslCertExtractProcess.exitCode,
-            stderr: opensslCertExtractErrors,
-            stdout: opensslCertExtractOutput,
+            // stderr describes the client's own upload; safe to return,
+            // bounded so a pathological upload cannot blow up the response.
+            stderr: opensslCertExtractErrors.slice(0, 4096),
         });
     }
     if(opensslPrivateKeyExtractProcess.exitCode) {
         errors.push({
             process: "openssl pkcs12 -nocerts",
             exitcode: opensslPrivateKeyExtractProcess.exitCode,
-            stderr: opensslPrivateKeyExtractErrors + "\n\n" + opensslPrivateKeyCleanupErrors,
-            stdout: opensslPrivateKeyCleanupOutput,
+            stderr: (opensslPrivateKeyExtractErrors + "\n\n" + opensslPrivateKeyCleanupErrors).slice(0, 4096),
         });
     }
 
     if(errors.length) {
-        return res.status(400).send({ errors });
+        return res.status(400).send({
+            error: "The supplied certificate could not be converted. See errors for the openssl diagnostics.",
+            errors,
+        });
     }
 
-    const x509Cert = new crypto.X509Certificate(Buffer.from(opensslCertExtractOutput));
+    /** @type {crypto.X509Certificate} */
+    let x509Cert;
+    try {
+        x509Cert = new crypto.X509Certificate(Buffer.from(opensslCertExtractOutput));
+    }
+    catch {
+        throw new ClientError(400, "The converted data is not a valid X.509 certificate.");
+    }
 
     res.send({
         cert: opensslCertExtractOutput,
@@ -138,6 +194,18 @@ app.post("/pem-key-conversion", async (req, res) => {
             validTo: x509Cert.validToDate.getTime(),
         }
     });
+}));
+
+// Central error handler: ClientError messages are curated above and safe to
+// show; anything else is logged server-side and answered with a generic 500
+// so stack traces and dependency errors never reach clients.
+/** @type {import("express").ErrorRequestHandler} */
+app.use((error, req, res, next) => {
+    if(error instanceof ClientError) {
+        return res.status(error.status).send({ error: error.message });
+    }
+    req.log.error({ err: error }, "Unhandled error");
+    res.status(500).send({ error: "Internal server error." });
 });
 
 /**
