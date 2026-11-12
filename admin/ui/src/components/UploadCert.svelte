@@ -139,6 +139,7 @@
 
     <p>Upload enten et PKCS#12 (.p12) certifikat, evt. krypteret, eller hhv. et x509 certifikat og en ukrypteret RSA private key i .pem fil.</p>
     <p>Certifikatet skal være udstedet af Den Danske Stat til din organisation.</p>
+    <p>Sådan bestiller du det rigtige certifikat, og hvad der kræves af det, fremgår af <a href="https://github.com/os2ai/adgangskomponent/blob/main/docs/Setup.md#4-certifikat-til-fka-integration" target="_blank" rel="noopener">opsætningsguidens certifikatafsnit</a>.</p>
 
     {#if uploadError}
         <div class="error">
