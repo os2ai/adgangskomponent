@@ -8,7 +8,7 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ### Changed
 
-* **[Meaningful, non-leaking errors in the admin API.](https://github.com/os2ai/adgangskomponent/issues/7)** Invalid uploads now get curated 400 responses ("Could not parse the supplied data as an X.509 certificate") instead of Express default stack-trace pages or Node parser messages that echo the input. A central error handler logs unexpected failures server-side and answers a generic 500. openssl diagnostics (which describe the user's own certificate) are kept but bounded, and a missing openssl binary yields a 500 without exposing paths or environment.
+* **[Meaningful, non-leaking errors in the admin API.](https://github.com/os2ai/adgangskomponent/issues/7)** Invalid uploads now get curated 400 responses ("Could not parse the supplied data as an X.509 certificate") instead of Express default stack-trace pages or Node parser messages that echo the input. A central error handler logs unexpected failures server-side and answers a generic 500. openssl diagnostics (which describe the user's own certificate) are kept but bounded, and a missing openssl binary yields a 500 without exposing paths or environment. Contract covered by the new `admin/api` test suite (`npm test`), run on pull requests.
 
 ### Security
 
