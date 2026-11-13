@@ -7,6 +7,13 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 ## [Unreleased]
 
 ### Security
+* **[Bump nginx base image and patch-update npm dependencies.](https://github.com/os2ai/adgangskomponent/pull/38)**
+The admin UI runtime image moves to nginx `1.31.8-alpine` (latest 1.31.x patch release),
+and both npm lockfiles are updated within their existing semver ranges: transitive
+dependencies of express (body-parser, qs, path-to-regexp, and others) reach their
+advisory-free versions, and the UI takes same-minor patch updates (vite reaches its
+advisory-free 7.3.8; the remaining svelte and axios advisories need minor jumps and
+are left for a separate change). No dependency is replaced and no version range widens.
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.
 This results in roles and groups being synced correctly, so stale permissions no longer persist indefinitely.
