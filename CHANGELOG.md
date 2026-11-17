@@ -8,7 +8,7 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ### Added
 
-* **[Resource requests and limits on admin deployments.](https://github.com/os2ai/adgangskomponent/issues/9)** The admin UI and API containers get deliberately small defaults (requests 10m/64Mi, limits 250m/256Mi), overridable via `admin.ui.resources` / `admin.api.resources` in values. These are small workloads and should not schedule without a request.
+* **[Resource requests and limits on admin deployments.](https://github.com/os2ai/adgangskomponent/issues/9)** The admin UI and API containers get deliberately small defaults (requests 10m/64Mi, limits 250m/256Mi for the UI and 500m/256Mi for the API), overridable via `admin.ui.resources` / `admin.api.resources` in values. These are small workloads and should not schedule without a request. The values were verified against certificate upload load: even ten concurrent 8192 bit uploads peak at around 32MB memory, while the CPU bound openssl conversions are what the API cpu limit needs to accommodate.
 
 ### Security
 
