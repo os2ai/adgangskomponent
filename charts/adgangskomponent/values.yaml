@@ -49,6 +49,8 @@ admin:
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-ui
     # Small static asset server; the built-in defaults are deliberately tiny.
+    # Served assets are CPU idle and the container peaks at around 5MB, so
+    # these are unlikely to ever need changing.
     #resources:
     #  requests:
     #    cpu: 10m
@@ -61,12 +63,15 @@ admin:
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-api
     # Small API; the built-in defaults are deliberately tiny. Note it shells
-    # out to openssl for certificate conversion - give it a bit more if
-    # certificate uploads are slow.
+    # out to openssl for certificate conversion. A single 8192 bit certificate
+    # upload peaks at around 25MB and 0.05 CPU seconds, and ten concurrent
+    # uploads at around 32MB, so the defaults leave ample memory headroom.
+    # The cpu limit is the only value likely to need raising: concurrent
+    # uploads are CPU bound in openssl and get throttled at 500m.
     #resources:
     #  requests:
     #    cpu: 10m
     #    memory: 64Mi
     #  limits:
-    #    cpu: 250m
+    #    cpu: 500m
     #    memory: 256Mi
