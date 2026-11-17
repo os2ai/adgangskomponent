@@ -13,8 +13,17 @@ import smacker from "smacker";
 
 const app = express();
 
-app.use(pinoHttp());
+app.use(pinoHttp({
+    autoLogging: {
+        ignore: (req) => req.url === "/healthz",
+    },
+}));
 app.use(cors());
+
+// Liveness/readiness endpoint, used by the chart's probes.
+app.get("/healthz", (req, res) => {
+    res.type("text/plain").send("ok");
+});
 
 app.post("/x509-parse", async (req, res) => {
     const x509Cert = new crypto.X509Certificate(await streamToBuffer(req));
