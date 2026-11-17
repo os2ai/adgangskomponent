@@ -1,5 +1,5 @@
-# https://hub.docker.com/layers/library/node/24.16.0-slim/images/sha256-cbd8bcbdfd0d148205c9449dff3ca3c9c94d73f393a0e03ef1c8d3846c5038bf
-FROM node:24.16.0-slim@sha256:cbd8bcbdfd0d148205c9449dff3ca3c9c94d73f393a0e03ef1c8d3846c5038bf
+# https://hub.docker.com/layers/library/node/26.13.1-slim/images/sha256-a5a5adfee3013de54504e0e6aff49993acf7daed072e86be75b8818c0f6ac258
+FROM node:26.13.1-slim@sha256:a5a5adfee3013de54504e0e6aff49993acf7daed072e86be75b8818c0f6ac258
 
 RUN apt update -y && apt install openssl -y && apt clean && rm -rf /var/lib/apt/lists/*
 
