@@ -8,7 +8,7 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ### Changed
 
-* **[CORS restricted to configured origins.](https://github.com/os2ai/adgangskomponent/issues/8)** The admin API no longer answers with `Access-Control-Allow-Origin: *`. Origins come from `admin.api.corsAllowedOrigins` (comma-separated), defaulting to the admin UI origin only; an empty value disables CORS entirely. Behavior covered by the new `admin/api` test suite (`npm test`), run on pull requests.
+* **[CORS restricted to configured origins.](https://github.com/os2ai/adgangskomponent/issues/8)** The admin API answers with `Access-Control-Allow-Origin: *` only while `admin.api.corsAllowedOrigins` is unset or empty; configured values (comma-separated) form an allow-list, defaulting to the admin UI origin. The wildcard fallback is deprecated and will be replaced by no CORS at all in v2.0.0. Behavior covered by the new `admin/api` test suite (`npm test`), run on pull requests.
 
 ### Security
 

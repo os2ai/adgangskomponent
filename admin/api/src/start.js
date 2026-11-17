@@ -17,8 +17,11 @@ app.use(pinoHttp());
 
 // Only the admin panel frontend legitimately calls this API cross-origin.
 // CORS_ALLOWED_ORIGINS is a comma-separated allow-list rendered by the
-// chart (default: the admin UI origin). An empty value means no CORS at
-// all - same-origin requests only.
+// chart (default: the admin UI origin).
+// TODO(v2.0.0): when no origins are configured, fail closed (no CORS at
+// all, same-origin requests only) instead of falling back to the wildcard
+// below. The permissive fallback exists only to preserve the pre-v1
+// behavior for deployments that have not set the variable yet.
 const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())
@@ -26,6 +29,12 @@ const corsAllowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? "")
 
 if(corsAllowedOrigins.length) {
     app.use(cors({ origin: corsAllowedOrigins }));
+}
+else {
+    console.warn("DEPRECATION WARNING: CORS_ALLOWED_ORIGINS is not set (or empty). The admin API answers with Access-Control-Allow-Origin: * (any origin). This wildcard fallback is deprecated and will be removed in v2.0.0, where an unset or empty CORS_ALLOWED_ORIGINS will disable cross-origin access entirely. Set CORS_ALLOWED_ORIGINS to a comma-separated allow-list (e.g. the admin UI origin) to silence this warning.");
+    // Passing undefined keeps the pre-allow-list behavior: cors() then
+    // defaults to Access-Control-Allow-Origin: *.
+    app.use(cors(undefined));
 }
 
 app.post("/x509-parse", async (req, res) => {
