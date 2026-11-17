@@ -41,7 +41,7 @@
         // TODO: repeated validation from +page.svelte
         // TODO: handle these errors better
         if(metadata.issuer?.O !== "Den Danske Stat") {
-            throw new Error("Certificate not issued by the Danish Governmment.");
+            throw new Error("Certificate not issued by the Danish Government.");
         }
 
         const now = Date.now();
@@ -68,7 +68,7 @@
         // TODO: repeated validation from +page.svelte
         // TODO: handle these errors better
         if(metadata.issuer?.O !== "Den Danske Stat") {
-            throw new Error("Certificate not issued by the Danish Governmment.");
+            throw new Error("Certificate not issued by the Danish Government.");
         }
 
         const now = Date.now();
