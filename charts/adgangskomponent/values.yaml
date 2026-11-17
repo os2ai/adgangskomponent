@@ -51,8 +51,9 @@ admin:
   api:
     #domain:
     # Comma-separated CORS allow-list. Defaults to the admin UI origin
-    # (https://admin.<domain> or admin.ui.domain). Set to "" to disable CORS
-    # entirely (same-origin only).
+    # (https://admin.<domain> or admin.ui.domain). Unset or "" falls back to
+    # Access-Control-Allow-Origin: * (deprecated; will disable CORS entirely
+    # in v2.0.0).
     #corsAllowedOrigins: https://admin.example.dk
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-api

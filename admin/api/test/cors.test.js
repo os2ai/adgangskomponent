@@ -1,7 +1,9 @@
 // @ts-check
 
-// Tests of the admin API CORS contract (issue #8): the wildcard origin is
-// replaced by a configured allow-list; empty config means no CORS at all.
+// Tests of the admin API CORS contract (issue #8): a configured allow-list
+// replaces the wildcard origin; unset/empty config keeps the deprecated
+// wildcard fallback (Access-Control-Allow-Origin: *) until v2.0.0, where it
+// will disable CORS entirely.
 // Each case runs the real server with its own CORS_ALLOWED_ORIGINS.
 
 import { test } from "node:test";
@@ -124,9 +126,18 @@ test("comma-separated list allows each listed origin only", { timeout: 60_000 },
     });
 });
 
-test("empty allow-list disables CORS entirely", { timeout: 60_000 }, async () => {
+test("empty allow-list keeps the deprecated wildcard fallback", { timeout: 60_000 }, async () => {
     await withServer({ CORS_ALLOWED_ORIGINS: "" }, async (request) => {
         const response = await request("https://admin.example.dk");
-        assert.equal(response.headers.get("access-control-allow-origin"), null);
+        assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    });
+});
+
+test("unset allow-list keeps the deprecated wildcard fallback", { timeout: 60_000 }, async () => {
+    // Delete the variable from the inherited environment, not just empty it,
+    // to cover deployments that never set it at all.
+    await withServer({ CORS_ALLOWED_ORIGINS: undefined }, async (request) => {
+        const response = await request("https://admin.example.dk");
+        assert.equal(response.headers.get("access-control-allow-origin"), "*");
     });
 });
