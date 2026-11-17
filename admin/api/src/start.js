@@ -164,8 +164,10 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
         errors.push({
             process: "openssl x509 -nokeys",
             exitcode: opensslCertExtractProcess.exitCode,
-            // stderr describes the client's own upload; safe to return,
-            // bounded so a pathological upload cannot blow up the response.
+            // stderr describes the client's own upload; safe to return.
+            // openssl echoes offending input inside its error messages, so a
+            // crafted upload could make it emit megabytes and grow the reply
+            // without limit; bound it to keep the response size capped.
             stderr: opensslCertExtractErrors.slice(0, 4096),
         });
     }
@@ -173,6 +175,8 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
         errors.push({
             process: "openssl pkcs12 -nocerts",
             exitcode: opensslPrivateKeyExtractProcess.exitCode,
+            // Same bound as above: capped so the diagnostics cannot grow the
+            // response beyond 4 KiB no matter the upload.
             stderr: (opensslPrivateKeyExtractErrors + "\n\n" + opensslPrivateKeyCleanupErrors).slice(0, 4096),
         });
     }
