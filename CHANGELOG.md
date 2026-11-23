@@ -6,6 +6,12 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ## [Unreleased]
 
+### Changed
+
+* **Upgrade the bundled Keycloak realm export to 26.5.7.** The `keycloakVersion`
+  in the realm import moves from 26.5.1 to 26.5.7, the latest patch of the
+  same minor stream the deployments run.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.
