@@ -18,6 +18,10 @@ from Node.js 24 to 26, which entered Long Term Support as "Lithium" in October 2
 Both Dockerfiles pin the tag together with the matching amd64 child manifest digest
 of node:26.13.1-slim.
 
+* **Upgrade the bundled Keycloak realm export to 26.8.2.** The `keycloakVersion`
+  in the realm import moves from 26.5.1 to 26.8.2 to match the Keycloak server
+  image deployed through the keycloak-operator.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.
