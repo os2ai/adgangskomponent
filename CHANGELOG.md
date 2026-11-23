@@ -18,7 +18,7 @@ from Node.js 24 to 26, which entered Long Term Support as "Lithium" in October 2
 Both Dockerfiles pin the tag together with the matching amd64 child manifest digest
 of node:26.13.1-slim.
 
-* **Upgrade the bundled Keycloak realm export to 26.8.2.** The `keycloakVersion`
+* **[Upgrade the bundled Keycloak realm export to 26.8.2.](https://github.com/os2ai/adgangskomponent/pull/39)** The `keycloakVersion`
   in the realm import moves from 26.5.1 to 26.8.2 to match the Keycloak server
   image deployed through the keycloak-operator.
 
