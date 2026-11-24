@@ -27,14 +27,11 @@ systems: []
   #    #    #- entityId:
   #    #    #  value:
 
-ingress:
-  # Common ingress settings for all ingresses rendered by this chart.
-  # Per-component overrides under admin.ui.ingress / admin.api.ingress take
-  # precedence over the values set here.
-  #  annotations:
-  #    cert-manager.io/cluster-issuer: letsencrypt
-  #  className: traefik
-  #tlsSecret: keycloak-tls-secret
+keycloak:
+  ingress:
+    # Passed to the Keycloak CRD's spec.ingress as-is.
+    #className:
+    #annotations: {}
 db:
   #vendor: postgres
   #host: cloudnative-pg-cluster-rw
@@ -50,7 +47,6 @@ admin:
   ui:
     #domain:
     ingress:
-      # Overrides for this ingress only; merged on top of .Values.ingress.
       #className:
       #annotations: {}
     image:
@@ -58,12 +54,11 @@ admin:
   api:
     #domain:
     ingress:
-      # Overrides for this ingress only; merged on top of .Values.ingress.
       #className:
       #annotations: {}
     # Max upload size for certificate bundles. Sets the default value of the
     # nginx proxy-body-size annotation; override the annotation itself via
-    # ingress.annotations if needed.
+    # admin.api.ingress.annotations if needed.
     #maxBodySize: 50m
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-api

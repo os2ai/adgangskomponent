@@ -1,10 +1,8 @@
 {{- $admin := .Values.admin | default dict }}
 {{- $api := get $admin "api" | default dict }}
 {{- $apiIngress := get $api "ingress" | default dict }}
-{{- $globalIngress := .Values.ingress | default dict }}
-{{- $className := get $apiIngress "className" | default (get $globalIngress "className") }}
-{{- $annotations := merge (get $apiIngress "annotations" | default dict) (get $globalIngress "annotations" | default dict) }}
-{{- /* proxy-body-size is a default; admin.api.ingress.annotations / ingress.annotations can override it. */}}
+{{- $annotations := get $apiIngress "annotations" | default dict }}
+{{- /* proxy-body-size is a default; admin.api.ingress.annotations can override it. */}}
 {{- if not (hasKey $annotations "nginx.ingress.kubernetes.io/proxy-body-size") }}
 {{- $_ := set $annotations "nginx.ingress.kubernetes.io/proxy-body-size" (get $api "maxBodySize" | default "50m") }}
 {{- end }}
@@ -17,7 +15,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- with $className }}
+  {{- with (get $apiIngress "className") }}
   ingressClassName: {{ . }}
   {{- end }}
   rules:

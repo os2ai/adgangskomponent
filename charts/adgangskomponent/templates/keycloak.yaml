@@ -4,8 +4,10 @@ metadata:
   name: keycloak # TODO: naming of all resources should include release name
 spec:
   instances: 2
+  {{- with .Values.keycloak.ingress }}
   ingress:
-{{ .Values.ingress | toYaml | indent 4 }}
+{{ . | toYaml | indent 4 }}
+  {{- end }}
   db:
 {{ .Values.db | toYaml | indent 4 }}
   # TODO: possible extraction of relationship between httpEnabled, ingress cert-manager, tls-secret
