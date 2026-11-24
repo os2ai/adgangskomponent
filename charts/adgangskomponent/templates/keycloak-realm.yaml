@@ -2170,7 +2170,7 @@ spec:
       frontendUrl: ""
       acr.loa.map: '{}'
       adminEventsExpiration: "1800"
-    keycloakVersion: 26.5.1
+    keycloakVersion: 26.8.2
     userManagedAccessAllowed: false
     organizationsEnabled: false
     verifiableCredentialsEnabled: false
