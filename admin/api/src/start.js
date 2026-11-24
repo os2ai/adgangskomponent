@@ -127,6 +127,19 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
 
     const opensslPrivateKeyCleanupProcess = spawn("openssl", [ "rsa" ], { stdio: [ opensslPrivateKeyExtractProcess.stdout, "pipe", "pipe" ]});
 
+    // A spawn failure (typically ENOENT: openssl not installed) is a server
+    // fault, not a bad certificate. Record it: every process gets a listener
+    // here, because an unobserved "error" event crashes the whole server
+    // (uncaughtException) instead of just failing this request.
+    /** @type {Error | null} */
+    let opensslSpawnError = null;
+    const recordSpawnError = (/** @type {Error} */ error) => {
+        opensslSpawnError ??= error;
+    };
+    opensslCertExtractProcess.once("error", recordSpawnError);
+    opensslPrivateKeyExtractProcess.once("error", recordSpawnError);
+    opensslPrivateKeyCleanupProcess.once("error", recordSpawnError);
+
     req.log.info("Started processes");
 
     const opensslCertExtractOutputPromise = opensslCertExtractProcess.stdout ? streamToText(opensslCertExtractProcess.stdout) : "";
@@ -155,7 +168,7 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
 
     // openssl may not be present at all (spawn ENOENT): that is a server
     // fault, not a bad certificate - report it without details.
-    if(opensslCertExtractProcess.exitCode === null && opensslPrivateKeyExtractProcess.exitCode === null) {
+    if(opensslSpawnError) {
         throw new ClientError(500, "Certificate conversion is unavailable on this server.");
     }
 
@@ -165,9 +178,10 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
             process: "openssl x509 -nokeys",
             exitcode: opensslCertExtractProcess.exitCode,
             // stderr describes the client's own upload; safe to return.
-            // openssl echoes offending input inside its error messages, so a
-            // crafted upload could make it emit megabytes and grow the reply
-            // without limit; bound it to keep the response size capped.
+            // Hardening cap: openssl diagnostics do not normally echo the
+            // input, but the cap guarantees a bounded reply regardless of
+            // openssl version/behavior; no realistic failure observed so far
+            // comes close to 4 KiB.
             stderr: opensslCertExtractErrors.slice(0, 4096),
         });
     }
@@ -175,8 +189,7 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
         errors.push({
             process: "openssl pkcs12 -nocerts",
             exitcode: opensslPrivateKeyExtractProcess.exitCode,
-            // Same bound as above: capped so the diagnostics cannot grow the
-            // response beyond 4 KiB no matter the upload.
+            // Same hardening cap as above; see the comment there.
             stderr: (opensslPrivateKeyExtractErrors + "\n\n" + opensslPrivateKeyCleanupErrors).slice(0, 4096),
         });
     }
@@ -208,6 +221,15 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
         }
     });
 }));
+
+// Test hook: when started with ADMIN_API_TEST_FAULT=1, this route always
+// throws a non-ClientError so the generic-500 branch of the error handler
+// can be exercised end to end. Never set in production deployments.
+if(process.env.ADMIN_API_TEST_FAULT) {
+    app.post("/test-fault", () => {
+        throw new Error("Injected test fault");
+    });
+}
 
 // Central error handler: ClientError messages are curated above and safe to
 // show; anything else is logged server-side and answered with a generic 500
