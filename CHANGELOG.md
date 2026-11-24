@@ -28,6 +28,7 @@ This results in roles and groups being synced correctly, so stale permissions no
 
 ### Fixed
 
+* **[Keycloak PDB selector matches no pods.](https://github.com/os2ai/adgangskomponent/issues/25)** The PodDisruptionBudget selected `component: keycloak`, but the keycloak-operator labels its pods `app: keycloak`. The PDB therefore guarded an empty set - Keycloak had no eviction protection and `KubePdbNotEnoughHealthyPods` fired continuously. The selector now matches `app: keycloak`.
 * **[Minor typo in chart build workflow.](https://github.com/os2ai/adgangskomponent/commit/95b5c904d98ab3ae38795b9a773899a4b009d75d)** This never allowed for the override function it proclaimed to facilitate due to a typo in the jq command.
 * **[Add priority to certificates when uploaded.](https://github.com/os2ai/adgangskomponent/pull/28)** The signing KeyDescriptor is now listed before the encryption KeyDescriptor.
 
