@@ -6,7 +6,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/start"
+    "dev": "nodemon src/start",
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "dependencies": {
     "cors": "^2.8.6",
