@@ -19,6 +19,7 @@ Both Dockerfiles pin the tag together with the matching amd64 child manifest dig
 of node:26.13.1-slim.
 
 * **[Bump nginx to 1.31.8.](https://github.com/os2ai/adgangskomponent/pull/30)** The admin UI runtime image moves from nginx 1.31.1 to 1.31.8, pinned by manifest digest. The admin API image additionally runs `apt upgrade` before installing openssl, so it picks up base-image security fixes at build time.
+* **[Meaningful, non-leaking errors in the admin API.](https://github.com/os2ai/adgangskomponent/issues/7)** Invalid uploads now get curated 400 responses ("Could not parse the supplied data as an X.509 certificate") instead of Express default stack-trace pages or Node parser messages that echo the input. A central error handler logs unexpected failures server-side and answers a generic 500. openssl diagnostics (which describe the user's own certificate) are kept but bounded, and a missing openssl binary yields a 500 without exposing paths or environment. Contract covered by the new `admin/api` test suite (`npm test`), run on pull requests.
 
 ### Security
 

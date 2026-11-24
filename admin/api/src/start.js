@@ -25,8 +25,38 @@ app.get("/healthz", (req, res) => {
     res.type("text/plain").send("ok");
 });
 
+/**
+ * Deliberate, safe-to-show-to-the-client error.
+ */
+class ClientError extends Error {
+    /**
+     * @param {number} status
+     * @param {string} message
+     */
+    constructor(status, message) {
+        super(message);
+        this.status = status;
+    }
+}
+
+// Express 5 forwards rejected promises and sync throws from handlers to
+// the error handler below; no manual catch wrapper is needed.
 app.post("/x509-parse", async (req, res) => {
-    const x509Cert = new crypto.X509Certificate(await streamToBuffer(req));
+    const body = await streamToBuffer(req);
+    if(body.byteLength === 0) {
+        throw new ClientError(400, "Request body is empty; expected a PEM-encoded X.509 certificate.");
+    }
+
+    /** @type {crypto.X509Certificate} */
+    let x509Cert;
+    try {
+        x509Cert = new crypto.X509Certificate(body);
+    }
+    catch {
+        // Do not surface the Node error verbatim: its message embeds the
+        // offending input. State the problem, not the internals.
+        throw new ClientError(400, "Could not parse the supplied data as an X.509 certificate.");
+    }
 
     res.send({
         issuer: x509ParseAttribute(x509Cert.issuer),
@@ -87,6 +117,19 @@ app.post("/pem-key-conversion", async (req, res) => {
 
     const opensslPrivateKeyCleanupProcess = spawn("openssl", [ "rsa" ], { stdio: [ opensslPrivateKeyExtractProcess.stdout, "pipe", "pipe" ]});
 
+    // A spawn failure (typically ENOENT: openssl not installed) is a server
+    // fault, not a bad certificate. Record it: every process gets a listener
+    // here, because an unobserved "error" event crashes the whole server
+    // (uncaughtException) instead of just failing this request.
+    /** @type {Error | null} */
+    let opensslSpawnError = null;
+    const recordSpawnError = (/** @type {Error} */ error) => {
+        opensslSpawnError ??= error;
+    };
+    opensslCertExtractProcess.once("error", recordSpawnError);
+    opensslPrivateKeyExtractProcess.once("error", recordSpawnError);
+    opensslPrivateKeyCleanupProcess.once("error", recordSpawnError);
+
     req.log.info("Started processes");
 
     const opensslCertExtractOutputPromise = opensslCertExtractProcess.stdout ? streamToText(opensslCertExtractProcess.stdout) : "";
@@ -96,8 +139,8 @@ app.post("/pem-key-conversion", async (req, res) => {
     const opensslPrivateKeyCleanupErrorsPromise = opensslPrivateKeyCleanupProcess.stderr ? streamToText(opensslPrivateKeyCleanupProcess.stderr) : "";
 
     await Promise.all([
-        new Promise((resolve) => opensslCertExtractProcess.once("exit", resolve)),
-        new Promise((resolve) => opensslPrivateKeyExtractProcess.once("exit", resolve)),
+        new Promise((resolve) => opensslCertExtractProcess.once("exit", resolve).once("error", resolve)),
+        new Promise((resolve) => opensslPrivateKeyExtractProcess.once("exit", resolve).once("error", resolve)),
     ]);
 
     const opensslCertExtractOutput = await opensslCertExtractOutputPromise;
@@ -113,29 +156,49 @@ app.post("/pem-key-conversion", async (req, res) => {
 
     req.log.info("Processes concluded, files cleaned up");
 
+    // openssl may not be present at all (spawn ENOENT): that is a server
+    // fault, not a bad certificate - report it without details.
+    if(opensslSpawnError) {
+        throw new ClientError(500, "Certificate conversion is unavailable on this server.");
+    }
+
     const errors = [];
     if(opensslCertExtractProcess.exitCode) {
         errors.push({
             process: "openssl x509 -nokeys",
             exitcode: opensslCertExtractProcess.exitCode,
-            stderr: opensslCertExtractErrors,
-            stdout: opensslCertExtractOutput,
+            // stderr describes the client's own upload; safe to return.
+            // Hardening cap: openssl diagnostics do not normally echo the
+            // input, but the cap guarantees a bounded reply regardless of
+            // openssl version/behavior; no realistic failure observed so far
+            // comes close to 4 KiB.
+            stderr: opensslCertExtractErrors.slice(0, 4096),
         });
     }
     if(opensslPrivateKeyExtractProcess.exitCode) {
         errors.push({
             process: "openssl pkcs12 -nocerts",
             exitcode: opensslPrivateKeyExtractProcess.exitCode,
-            stderr: opensslPrivateKeyExtractErrors + "\n\n" + opensslPrivateKeyCleanupErrors,
-            stdout: opensslPrivateKeyCleanupOutput,
+            // Same hardening cap as above; see the comment there.
+            stderr: (opensslPrivateKeyExtractErrors + "\n\n" + opensslPrivateKeyCleanupErrors).slice(0, 4096),
         });
     }
 
     if(errors.length) {
-        return res.status(400).send({ errors });
+        return res.status(400).send({
+            error: "The supplied certificate could not be converted. See errors for the openssl diagnostics.",
+            errors,
+        });
     }
 
-    const x509Cert = new crypto.X509Certificate(Buffer.from(opensslCertExtractOutput));
+    /** @type {crypto.X509Certificate} */
+    let x509Cert;
+    try {
+        x509Cert = new crypto.X509Certificate(Buffer.from(opensslCertExtractOutput));
+    }
+    catch {
+        throw new ClientError(400, "The converted data is not a valid X.509 certificate.");
+    }
 
     res.send({
         cert: opensslCertExtractOutput,
@@ -147,6 +210,27 @@ app.post("/pem-key-conversion", async (req, res) => {
             validTo: x509Cert.validToDate.getTime(),
         }
     });
+});
+
+// Test hook: when started with ADMIN_API_TEST_FAULT=1, this route always
+// throws a non-ClientError so the generic-500 branch of the error handler
+// can be exercised end to end. Never set in production deployments.
+if(process.env.ADMIN_API_TEST_FAULT) {
+    app.post("/test-fault", () => {
+        throw new Error("Injected test fault");
+    });
+}
+
+// Central error handler: ClientError messages are curated above and safe to
+// show; anything else is logged server-side and answered with a generic 500
+// so stack traces and dependency errors never reach clients.
+/** @type {import("express").ErrorRequestHandler} */
+app.use((error, req, res, next) => {
+    if(error instanceof ClientError) {
+        return res.status(error.status).send({ error: error.message });
+    }
+    req.log.error({ err: error }, "Unhandled error");
+    res.status(500).send({ error: "Internal server error." });
 });
 
 /**
