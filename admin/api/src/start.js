@@ -26,18 +26,6 @@ app.get("/healthz", (req, res) => {
 });
 
 /**
- * Wrap an async route so rejections reach our error handler instead of
- * Express' implicit behaviour.
- * @param {(req: import("express").Request, res: import("express").Response) => Promise<void>} handler
- * @returns {import("express").RequestHandler}
- */
-function asyncRoute(handler) {
-    return (req, res, next) => {
-        handler(req, res).catch(next);
-    };
-}
-
-/**
  * Deliberate, safe-to-show-to-the-client error.
  */
 class ClientError extends Error {
@@ -51,7 +39,9 @@ class ClientError extends Error {
     }
 }
 
-app.post("/x509-parse", asyncRoute(async (req, res) => {
+// Express 5 forwards rejected promises and sync throws from handlers to
+// the error handler below; no manual catch wrapper is needed.
+app.post("/x509-parse", async (req, res) => {
     const body = await streamToBuffer(req);
     if(body.byteLength === 0) {
         throw new ClientError(400, "Request body is empty; expected a PEM-encoded X.509 certificate.");
@@ -74,9 +64,9 @@ app.post("/x509-parse", asyncRoute(async (req, res) => {
         validFrom: x509Cert.validFromDate.getTime(),
         validTo: x509Cert.validToDate.getTime(),
     });
-}));
+});
 
-app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
+app.post("/pem-key-conversion", async (req, res) => {
     const opensslTmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "os2adgang_openssl_tmp_dir"));
 
     /** @type {NodeJS.ProcessEnv} */
@@ -220,7 +210,7 @@ app.post("/pem-key-conversion", asyncRoute(async (req, res) => {
             validTo: x509Cert.validToDate.getTime(),
         }
     });
-}));
+});
 
 // Test hook: when started with ADMIN_API_TEST_FAULT=1, this route always
 // throws a non-ClientError so the generic-500 branch of the error handler
