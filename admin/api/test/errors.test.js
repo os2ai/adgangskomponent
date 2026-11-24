@@ -1,82 +1,45 @@
 // @ts-check
 
-// Zero-dependency tests of the admin API error contract (issue #7):
-// curated, non-leaking error responses. Runs the real server via the
-// built-in test runner: node --test from admin/api.
+// Tests of the admin API error contract (issue #7): curated, non-leaking
+// error responses, served by the real server (see test/server.js).
+// Variant server configs (missing openssl binary, fault injection) live in
+// errors-variant.test.js.
 
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawn, execFileSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFile as fsReadFile, unlink as fsUnlink } from "node:fs/promises";
+import { spawnServer, stopServer, post } from "./server.js";
 
-const BASE = "http://127.0.0.1:5701";
-
-/** @type {import("node:child_process").ChildProcess} */
+/** @type {import("node:child_process").ChildProcess | undefined} */
 let server;
 
-/**
- * @param {string} path
- * @param {BodyInit} body
- * @returns {Promise<{status: number, json: any, text: string}>}
- */
-async function post(path, body) {
-    const response = await fetch(`${BASE}${path}`, { method: "POST", body });
-    const text = await response.text();
-    /** @type {any} */
-    let json = undefined;
-    try {
-        json = JSON.parse(text);
-    }
-    catch {}
-    return { status: response.status, json, text };
-}
-
 before(async () => {
-    server = spawn(process.execPath, ["src/start.js"], {
-        cwd: new URL("..", import.meta.url).pathname,
-        stdio: "ignore",
-    });
-
-    // Wait for the port to answer (any response counts as up).
-    for(let i = 0; i < 50; i++) {
-        try {
-            await fetch(`${BASE}/x509-parse`, { method: "POST", body: "" });
-            return;
-        }
-        catch {
-            await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-    }
-    throw new Error("server did not come up");
+    server = await spawnServer();
 });
 
 after(async () => {
-    if(!server) {
-        return;
-    }
-    // SIGKILL: the server traps SIGTERM (smacker) and its graceful close can
-    // wait on keep-alive sockets; the exit event must not hang the runner.
-    const exited = new Promise((resolve) => server.once("exit", resolve));
-    server.kill("SIGKILL");
-    await exited;
+    await stopServer(server);
 });
 
 test("empty body on /x509-parse: 400 with curated message", async () => {
     const { status, json, text } = await post("/x509-parse", "");
     assert.equal(status, 400);
-    assert.equal(typeof json.error, "string");
+    assert.deepEqual(Object.keys(json), [ "error" ]);
     assert.match(json.error, /empty/i);
-    // Nothing that looks like a stack trace or Node internals.
-    assert.doesNotMatch(text, /at |Error:|X509Certificate/);
+    // No stack-trace-shaped leak.
+    assert.doesNotMatch(text, /\n\s+at\s+\S/);
 });
 
 test("garbage body on /x509-parse: 400, input not echoed", async () => {
     const sentinel = "CANARY-DO-NOT-ECHO";
-    const { status, text } = await post("/x509-parse", `not a cert ${sentinel}`);
+    const { status, json, text } = await post("/x509-parse", `not a cert ${sentinel}`);
     assert.equal(status, 400);
-    assert.match(text, /X\.509/);
+    // Curated message, and the upload's content never comes back.
+    assert.deepEqual(Object.keys(json), [ "error" ]);
+    assert.match(json.error, /X\.509/);
     assert.doesNotMatch(text, new RegExp(sentinel));
-    assert.doesNotMatch(text, /at |error:/);
+    assert.doesNotMatch(text, /\n\s+at\s+\S/);
 });
 
 test("valid certificate on /x509-parse: 200 with parsed metadata", async () => {
@@ -97,13 +60,20 @@ test("valid certificate on /x509-parse: 200 with parsed metadata", async () => {
 });
 
 test("garbage body on /pem-key-conversion: 400 with bounded openssl diagnostics", async () => {
-    const { status, json, text } = await post("/pem-key-conversion", "junk");
+    const { status, json } = await post("/pem-key-conversion", "junk");
     assert.equal(status, 400);
+    assert.deepEqual(Object.keys(json), [ "error", "errors" ]);
     assert.match(json.error, /could not be converted/i);
     assert.ok(Array.isArray(json.errors));
+    assert.ok(json.errors.length > 0);
     for(const err of json.errors) {
-        assert.ok(typeof err.stderr === "string" && err.stderr.length <= 4096, "stderr bounded");
+        // Pinned contract: process, exitcode, stderr - and deliberately NO
+        // stdout (dropped with this PR; stdout could grow unboundedly).
+        assert.deepEqual(Object.keys(err).sort(), [ "exitcode", "process", "stderr" ]);
+        assert.ok(typeof err.exitcode === "number");
+        // Diagnostics survive the hardening cap (not truncated to nothing).
+        assert.ok(err.stderr.length > 0);
+        assert.match(err.stderr, /error|unknown|could not/i);
+        assert.ok(err.stderr.length <= 4096, "stderr within the hardening cap");
     }
-    // No stack traces from our own code.
-    assert.doesNotMatch(text, /\n\s+at\s+\S/);
 });
