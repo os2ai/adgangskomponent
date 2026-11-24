@@ -61,9 +61,9 @@ admin:
       # Overrides for this ingress only; merged on top of .Values.ingress.
       #className:
       #annotations: {}
-    # Max upload size for certificate bundles. Only rendered as the nginx
-    # proxy-body-size annotation; on traefik configure the buffering
-    # middleware instead.
+    # Max upload size for certificate bundles. Sets the default value of the
+    # nginx proxy-body-size annotation; override the annotation itself via
+    # ingress.annotations if needed.
     #maxBodySize: 50m
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-api

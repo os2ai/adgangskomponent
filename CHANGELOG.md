@@ -10,7 +10,7 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 * **[Health checks on admin frontend and API.](https://github.com/os2ai/adgangskomponent/issues/10)** Both admin deployments now expose named `http` ports and readiness/liveness probes against `/healthz`. The API serves `GET /healthz` directly (with access logging suppressed for it); the UI's nginx answers `= /healthz` with 200 without access logs. API behavior covered by the new `admin/api` test suite (`npm test`), run on pull requests.
 
-* **[Configurable ingress annotations and class.](https://github.com/os2ai/adgangskomponent/issues/13)** The admin UI and API ingresses accept per-component `admin.ui.ingress` / `admin.api.ingress` (`className`, `annotations`) merged over the chart-wide `ingress:` block; per-component values win on conflicts. The previously hardcoded `nginx.ingress.kubernetes.io/proxy-body-size` annotation is now only emitted for the nginx ingress class (the Traefik default in OS2ai should use its buffering middleware instead) and its size is settable via `admin.api.maxBodySize`.
+* **[Configurable ingress annotations and class.](https://github.com/os2ai/adgangskomponent/issues/13)** The admin UI and API ingresses accept per-component `admin.ui.ingress` / `admin.api.ingress` (`className`, `annotations`) merged over the chart-wide `ingress:` block; per-component values win on conflicts. The previously hardcoded `nginx.ingress.kubernetes.io/proxy-body-size` annotation is now a default set via `admin.api.maxBodySize` (50m) and can be overridden through `admin.api.ingress.annotations` / `ingress.annotations`.
 
 ### Changed
 

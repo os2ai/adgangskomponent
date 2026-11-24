@@ -3,10 +3,9 @@
 {{- $apiIngress := get $api "ingress" | default dict }}
 {{- $globalIngress := .Values.ingress | default dict }}
 {{- $className := get $apiIngress "className" | default (get $globalIngress "className") }}
-{{- $annotations := dict }}
-{{- $_ := merge $annotations (get $apiIngress "annotations" | default dict) (get $globalIngress "annotations" | default dict) }}
-{{- /* Body-size limit follows the ingress class: nginx needs proxy-body-size, traefik uses the buffering middleware CRD instead. */}}
-{{- if or (not $className) (eq $className "nginx") }}
+{{- $annotations := merge (get $apiIngress "annotations" | default dict) (get $globalIngress "annotations" | default dict) }}
+{{- /* proxy-body-size is a default; admin.api.ingress.annotations / ingress.annotations can override it. */}}
+{{- if not (hasKey $annotations "nginx.ingress.kubernetes.io/proxy-body-size") }}
 {{- $_ := set $annotations "nginx.ingress.kubernetes.io/proxy-body-size" (get $api "maxBodySize" | default "50m") }}
 {{- end }}
 apiVersion: networking.k8s.io/v1
