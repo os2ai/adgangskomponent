@@ -18,6 +18,8 @@ from Node.js 24 to 26, which entered Long Term Support as "Lithium" in October 2
 Both Dockerfiles pin the tag together with the matching amd64 child manifest digest
 of node:26.13.1-slim.
 
+* **[Bump nginx to 1.31.8.](https://github.com/os2ai/adgangskomponent/pull/30)** The admin UI runtime image moves from nginx 1.31.1 to 1.31.8, pinned by manifest digest. The admin API image additionally runs `apt upgrade` before installing openssl, so it picks up base-image security fixes at build time.
+
 ### Security
 
 * **[Switch from IMPORT to FORCE.](https://github.com/os2ai/adgangskomponent/commit/1f120797a13ecb64bde38dc975a046a136c01a20)** The IdP in the Keycloak Realm is now initially set up to overwrite the users information, each time they login through the Adgangskomponent.
