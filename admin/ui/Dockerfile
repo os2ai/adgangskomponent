@@ -23,8 +23,8 @@ ENV PUBLIC_API_BASEURL=PUBLIC_API_BASEURL
 
 RUN npm run build -- --mode production
 
-# https://hub.docker.com/layers/library/nginx/1.31.1-alpine/images/sha256-31db9045b34376493fd4fb695d8a8d03bbfffaf6297fcde82d0f925ce2dd329a
-FROM nginx:1.31.1-alpine@sha256:31db9045b34376493fd4fb695d8a8d03bbfffaf6297fcde82d0f925ce2dd329a
+# https://hub.docker.com/layers/library/nginx/1.31.8-alpine/images/sha256-1ef7ca94d7879df82421428ce13bd1eaa412404953859cf7a5b6512c25e67a60
+FROM nginx:1.31.8-alpine@sha256:1ef7ca94d7879df82421428ce13bd1eaa412404953859cf7a5b6512c25e67a60
 COPY --from=build /app/build/ /usr/share/nginx/html
 
 ENV PUBLIC_OIDC_AUTH_CLIENT_ID=PUBLIC_OIDC_AUTH_CLIENT_ID
