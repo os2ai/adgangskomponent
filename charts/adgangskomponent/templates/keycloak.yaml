@@ -4,6 +4,9 @@ metadata:
   name: keycloak # TODO: naming of all resources should include release name
 spec:
   instances: 2
+  {{- with .Values.keycloak.tlsSecret }}
+  tlsSecret: {{ . }}
+  {{- end }}
   {{- with .Values.keycloak.ingress }}
   ingress:
 {{ . | toYaml | indent 4 }}

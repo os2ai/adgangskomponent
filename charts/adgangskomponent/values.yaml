@@ -28,10 +28,14 @@ systems: []
   #    #    #  value:
 
 keycloak:
+  # Name of a secret containing the TLS certificate for the Keycloak ingress
+  # (Keycloak CRD spec.tlsSecret).
+  #tlsSecret: keycloak-tls-secret
   ingress:
     # Passed to the Keycloak CRD's spec.ingress as-is.
-    #className:
-    #annotations: {}
+    #className: nginx
+    #annotations:
+    #  cert-manager.io/cluster-issuer: letsencrypt
 db:
   #vendor: postgres
   #host: cloudnative-pg-cluster-rw
@@ -47,15 +51,21 @@ admin:
   ui:
     #domain:
     ingress:
-      #className:
-      #annotations: {}
+      #className: nginx
+      #annotations:
+      #  cert-manager.io/cluster-issuer: letsencrypt
+      # TLS hosts and secret are derived from admin.ui.domain (<domain> and
+      # <domain>-tls); set a certificate-issuer via the annotations above.
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-ui
   api:
     #domain:
     ingress:
-      #className:
-      #annotations: {}
+      #className: nginx
+      #annotations:
+      #  cert-manager.io/cluster-issuer: letsencrypt
+      # TLS hosts and secret are derived from admin.api.domain (<domain> and
+      # <domain>-tls); set a certificate-issuer via the annotations above.
     # Max upload size for certificate bundles. Sets the default value of the
     # nginx proxy-body-size annotation; override the annotation itself via
     # admin.api.ingress.annotations if needed.
