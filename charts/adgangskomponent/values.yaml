@@ -1,3 +1,40 @@
+# Keycloak is deployed in one of two ways:
+#   keycloak.operator.enabled: true  (default) Keycloak is deployed as Keycloak and
+#                                    KeycloakRealmImport custom resources, reconciled by an
+#                                    already installed keycloak-operator. The operator is shared
+#                                    infrastructure: one instance can serve many namespaces
+#                                    (`watchNamespaces`, or watch everything), so it must NOT
+#                                    also be installed from this chart.
+#   keycloak.operator.enabled: false Keycloak runs from manifests rendered by this chart. No
+#                                    keycloak-operator, CRDs or operator RBAC are needed.
+# The realm, systems, ingress, db and admin UI/API settings below apply to both modes.
+keycloak:
+  operator:
+    enabled: true
+  # Keycloak image, used in bundled mode. Keep the tag aligned with the realm export's
+  # `keycloakVersion` when that is bumped.
+  image:
+    repository: quay.io/keycloak/keycloak
+    tag: 26.8.2
+  # KC_LOG_LEVEL, used by both modes. Matches the operator-mode value this chart shipped before
+  # it became configurable.
+  logLevel: INFO,org.keycloak.saml:TRACE,org.keycloak.protocol.saml:TRACE,org.keycloak.events:DEBUG,org.keycloak.services:TRACE,org.keycloak.broker:TRACE
+  # Bundled mode only.
+  bundled:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+    # Master-realm bootstrap admin, only honoured when the database is empty. The keycloak-operator
+    # creates one for you in operator mode; bundled mode gets it from an existing Secret.
+    admin:
+      existingSecret: ""
+      usernameKey: username
+      passwordKey: password
+
 domain:
 
 realm:

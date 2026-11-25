@@ -8,6 +8,17 @@ See [keep a changelog](https://keepachangelog.com/en/1.1.0/) for information abo
 
 ### Added
 
+* **Run Keycloak without the keycloak-operator.** Setting `keycloak.operator.enabled=false`
+  deploys Keycloak as a StatefulSet, Services and an Ingress from this chart instead of the
+  `Keycloak`/`KeycloakRealmImport` custom resources, so a cluster without the keycloak-operator can
+  still run Adgangskomponent. The default remains the operator mode, and the operator-mode render
+  is unchanged. The realm is defined once and consumed by both modes - as the
+  `KeycloakRealmImport` in operator mode and as the `realm.json` imported with `--import-realm` in
+  bundled mode - so realm, clients, claims and identity providers cannot drift between them.
+  Both modes set `KC_FEATURES=scripts`, without which Keycloak silently drops the script-based
+  privileges claim at import. Verified on a kind cluster: both modes reach ready state, bundled
+  pods join the Infinispan cluster, and the bootstrap admin authenticates.
+
 * **[Health checks on admin frontend and API.](https://github.com/os2ai/adgangskomponent/issues/10)** Both admin deployments now expose named `http` ports and readiness/liveness probes against `/healthz`. The API serves `GET /healthz` directly (with access logging suppressed for it); the UI's nginx answers `= /healthz` with 200 without access logs. API behavior covered by the new `admin/api` test suite (`npm test`), run on pull requests.
 
 * **[Resource requests and limits on admin deployments.](https://github.com/os2ai/adgangskomponent/issues/9)** The admin UI and API containers get deliberately small defaults (requests 10m/64Mi, limits 250m/256Mi for the UI and 500m/256Mi for the API), overridable via `admin.ui.resources` / `admin.api.resources` in values. These are small workloads and should not schedule without a request. The values were verified against certificate upload load: even ten concurrent 8192 bit uploads peak at around 32MB memory, while the CPU bound openssl conversions are what the API cpu limit needs to accommodate.

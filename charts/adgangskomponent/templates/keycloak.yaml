@@ -1,3 +1,4 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "operator" }}
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
@@ -19,7 +20,7 @@ spec:
     strategy: Auto
   additionalOptions:
     - name: log-level
-      value: INFO,org.keycloak.saml:TRACE,org.keycloak.protocol.saml:TRACE,org.keycloak.events:DEBUG,org.keycloak.services:TRACE,org.keycloak.broker:TRACE
+      value: {{ .Values.keycloak.logLevel }}
     - name: feature-scripts
       value: enabled
   unsupported:
@@ -34,3 +35,4 @@ spec:
           - name: oidc-script-based-protocol-mapper
             configMap:
               name: keycloak-oidc-script-based-protocol-mapper-configmap
+{{- end }}
