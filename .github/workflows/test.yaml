@@ -22,3 +22,70 @@ jobs:
       - name: Test
         working-directory: admin/api
         run: npm test
+
+  helm-chart:
+    name: Helm chart render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+      - name: Install helm
+        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 #v3
+        with:
+          version: 4.2.0
+      - name: Build provider jar
+        working-directory: charts/adgangskomponent
+        run: |
+          # Same deterministic build as the release workflow, so helm template can resolve
+          # .Files.Get. The file is gitignored and would otherwise break the template step.
+          declare JAR=files/providers/oidc-script-based-protocol-mapper.jar
+          declare JAR_SRC="${JAR%.jar}"
+          TZ=UTC find "$JAR_SRC" -exec touch -h -t 198001010000 {} +
+          (cd "$JAR_SRC" && TZ=UTC find . -type f | sort | TZ=UTC zip -q -X -D -@ "../$(basename "$JAR")")
+      - name: Render operator mode
+        working-directory: charts/adgangskomponent
+        run: |
+          helm template adgangskomponent . \
+            --set domain=adgang.example.com \
+            --set realm.name=os2adgang \
+            --set realm.displayName=OS2adgang > /tmp/operator-mode.yaml
+          test -s /tmp/operator-mode.yaml
+      - name: Render bundled mode
+        working-directory: charts/adgangskomponent
+        run: |
+          helm template adgangskomponent . \
+            --set domain=adgang.example.com \
+            --set realm.name=os2adgang \
+            --set realm.displayName=OS2adgang \
+            --set keycloak.operator.enabled=false \
+            --set db.vendor=postgres \
+            --set db.host=postgres \
+            --set db.database=os2adgang \
+            --set db.usernameSecret.name=db \
+            --set db.usernameSecret.key=username \
+            --set db.passwordSecret.name=db \
+            --set db.passwordSecret.key=password \
+            --set keycloak.bundled.admin.existingSecret=keycloak-admin > /tmp/bundled-mode.yaml
+          # Bundled mode must need no operator at all: no custom resources, no CRDs.
+          ! grep -q 'k8s.keycloak.org' /tmp/bundled-mode.yaml
+          grep -q 'kind: StatefulSet' /tmp/bundled-mode.yaml
+      - name: Validate realm import payload
+        working-directory: charts/adgangskomponent
+        run: |
+          # Bundled mode feeds this JSON to Keycloak's --import-realm, so it must carry the same
+          # clients and claims the operator mode would apply.
+          helm template adgangskomponent . \
+            --set domain=adgang.example.com \
+            --set realm.name=os2adgang \
+            --set realm.displayName=OS2adgang \
+            --set keycloak.operator.enabled=false \
+            --set db.vendor=postgres \
+            --set db.host=postgres \
+            --set db.database=os2adgang \
+            --set db.usernameSecret.name=db \
+            --set db.usernameSecret.key=username \
+            --set db.passwordSecret.name=db \
+            --set db.passwordSecret.key=password \
+            --set keycloak.bundled.admin.existingSecret=keycloak-admin \
+            --show-only templates/keycloak-bundled-realm-configmap.yaml > /tmp/realm-cm.yaml
+          yq -r '.data."realm.json"' /tmp/realm-cm.yaml | jq -e '.realm == "os2adgang" and (.clients | length > 0)' > /dev/null

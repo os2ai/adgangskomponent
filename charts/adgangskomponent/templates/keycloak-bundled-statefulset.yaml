@@ -1,0 +1,150 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "bundled" }}
+{{- $name := "keycloak" }}
+{{- $kc := .Values.keycloak }}
+{{- $db := .Values.db }}
+{{- $_ := required "keycloak.operator.enabled=false requires db.vendor" $db.vendor }}
+{{- $_ := required "keycloak.operator.enabled=false requires db.host" $db.host }}
+{{- $_ := required "keycloak.operator.enabled=false requires db.database" $db.database }}
+{{- $_ := required "keycloak.operator.enabled=false requires db.usernameSecret.name" $db.usernameSecret.name }}
+{{- $_ := required "keycloak.operator.enabled=false requires db.usernameSecret.key" $db.usernameSecret.key }}
+{{- $_ := required "keycloak.operator.enabled=false requires db.passwordSecret.name" $db.passwordSecret.name }}
+{{- $_ := required "keycloak.operator.enabled=false requires db.passwordSecret.key" $db.passwordSecret.key }}
+{{- $admin := $kc.bundled.admin }}
+{{- $_ := required "keycloak.operator.enabled=false requires keycloak.bundled.admin.existingSecret (master-realm bootstrap admin; the operator creates one in operator mode)" $admin.existingSecret }}
+{{- /*
+Keycloak StatefulSet, used when keycloak.operator.enabled is false. Names, host and realm are the
+same as the operator-managed instance, so the ingress and admin UI URLs do not change between
+modes. The StatefulSet is used (rather than a Deployment) so Keycloak can cluster through the
+HEADLESS service with a stable identity.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+spec:
+  replicas: {{ $kc.bundled.replicas }}
+  serviceName: {{ $name }}-headless
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        app.kubernetes.io/component: server
+      annotations:
+        # Keycloak only reads the realm and its provider jar at startup, so roll the pods when
+        # either changes.
+        checksum/realm: {{ include "adgangskomponent.realmJson" . | sha256sum }}
+        checksum/provider: {{ .Files.Get "files/providers/oidc-script-based-protocol-mapper.jar" | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: keycloak
+          image: "{{ $kc.image.repository }}:{{ $kc.image.tag }}"
+          args:
+            - start
+            - --import-realm
+          env:
+            - name: KC_HOSTNAME
+              value: https://{{ required "domain is required" .Values.domain }}
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            # Served at the root, matching the operator-managed instance.
+            - name: KC_HTTP_RELATIVE_PATH
+              value: /
+            # nginx-ingress sets X-Forwarded-*, not Forwarded.
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            - name: KC_DB
+              value: {{ $db.vendor }}
+            - name: KC_DB_URL_HOST
+              value: {{ $db.host }}
+            {{- with $db.port }}
+            - name: KC_DB_URL_PORT
+              value: {{ . | quote }}
+            {{- end }}
+            - name: KC_DB_URL_DATABASE
+              value: {{ $db.database }}
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.usernameSecret.name }}
+                  key: {{ $db.usernameSecret.key }}
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $db.passwordSecret.name }}
+                  key: {{ $db.passwordSecret.key }}
+            # The realm computes its privileges claim with a script-based protocol mapper.
+            # Bootstraps the master-realm admin needed to administer Keycloak and the admin UI.
+            # Only honoured on an empty database; the operator creates one itself in operator mode.
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $admin.existingSecret }}
+                  key: {{ $admin.usernameKey | default "username" }}
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $admin.existingSecret }}
+                  key: {{ $admin.passwordKey | default "password" }}
+            - name: KC_FEATURES
+              value: scripts
+            - name: KC_LOG_LEVEL
+              value: {{ $kc.logLevel }}
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_METRICS_ENABLED
+              value: "true"
+            # Cluster over the shared database, since there is no operator-provided service
+            # discovery setup. Requires the headless service for pod identity.
+            - name: KC_CACHE
+              value: ispn
+            - name: KC_CACHE_STACK
+              value: jdbc-ping
+            - name: JAVA_OPTS_APPEND
+              value: -XX:MaxRAMPercentage=70 -XX:InitialRAMPercentage=50
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: http-internal
+              containerPort: 9000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http-internal
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http-internal
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http-internal
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml $kc.bundled.resources | nindent 12 }}
+          volumeMounts:
+            - name: oidc-script-based-protocol-mapper
+              mountPath: /opt/keycloak/providers/oidc-script-based-protocol-mapper.jar
+              subPath: oidc-script-based-protocol-mapper.jar
+            - name: realm-import
+              mountPath: /opt/keycloak/data/import
+      volumes:
+        - name: oidc-script-based-protocol-mapper
+          configMap:
+            name: keycloak-oidc-script-based-protocol-mapper-configmap
+        - name: realm-import
+          configMap:
+            name: {{ .Release.Name }}-keycloak-realm
+{{- end }}

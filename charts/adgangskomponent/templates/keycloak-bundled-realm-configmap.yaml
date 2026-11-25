@@ -1,0 +1,12 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "bundled" }}
+{{- /*
+The realm JSON Keycloak imports from /opt/keycloak/data/import at startup (--import-realm). It is
+the same realm the operator consumes as a KeycloakRealmImport, so the two modes cannot drift.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-keycloak-realm
+data:
+  realm.json: {{ include "adgangskomponent.realmJson" . | quote }}
+{{- end }}

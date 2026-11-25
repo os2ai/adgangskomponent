@@ -1,10 +1,11 @@
-apiVersion: k8s.keycloak.org/v2alpha1
-kind: KeycloakRealmImport
-metadata:
-  name: {{ .Values.realm.name }}
-spec:
-  keycloakCRName: keycloak
-  realm:
+{{/*
+The Keycloak realm, defined once and shared by both deployment modes:
+  - operator mode embeds it in the KeycloakRealmImport custom resource below,
+  - bundled mode renders it as the realm JSON Keycloak imports at startup
+    (see keycloak-bundled-realm-configmap.yaml).
+The body keeps the four-space indentation that fits `spec.realm`; bundled mode strips it.
+*/}}
+{{- define "adgangskomponent.realm" }}
     id: {{ .Values.realm.name }}
     realm: {{ .Values.realm.name }}
     displayName: {{ .Values.realm.displayName }}
@@ -2179,3 +2180,23 @@ spec:
       profiles: []
     clientPolicies:
       policies: []
+{{- end }}
+
+{{/*
+The same realm as the flat JSON document Keycloak's --import-realm reads.
+*/}}
+{{- define "adgangskomponent.realmJson" }}
+{{- $realm := include "adgangskomponent.realm" . | trimPrefix "\n" }}
+{{- regexReplaceAll "(?m)^    " $realm "" | fromYaml | toJson }}
+{{- end }}
+
+{{- if eq (include "adgangskomponent.keycloakMode" .) "operator" }}
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: {{ .Values.realm.name }}
+spec:
+  keycloakCRName: keycloak
+  realm:
+{{ include "adgangskomponent.realm" . | trimPrefix "\n" }}
+{{- end }}

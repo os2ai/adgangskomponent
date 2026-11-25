@@ -1,0 +1,31 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "bundled" }}
+{{- $name := "keycloak" }}
+{{- /*
+Headless service for Infinispan cluster discovery, plus the service the Keycloak ingress targets.
+Names match what the keycloak-operator creates, so URLs are stable.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-headless
+spec:
+  clusterIP: None
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+{{- end }}
