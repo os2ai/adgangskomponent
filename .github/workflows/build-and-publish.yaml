@@ -68,7 +68,8 @@ jobs:
           yq -i ".annotations.\"dk.os2ai.provider-jar-sha256\" = \"$JAR_SHA\"" Chart.yaml
           echo "Provider jar sha256: $JAR_SHA"
 
-          helm dependencies update || true
+          # The keycloakx subchart is vendored (Chart.lock) so packaging needs no network.
+          helm dependency build
           helm package .
 
           declare PACKAGE=$NAME-$VERSION.tgz

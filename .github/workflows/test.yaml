@@ -22,3 +22,63 @@ jobs:
       - name: Test
         working-directory: admin/api
         run: npm test
+
+  helm-chart:
+    name: Helm chart render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+      - name: Install helm
+        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 #v3
+        with:
+          version: 4.2.0
+      - name: Build provider jar
+        working-directory: charts/adgangskomponent
+        run: |
+          declare JAR=files/providers/oidc-script-based-protocol-mapper.jar
+          declare JAR_SRC="${JAR%.jar}"
+          TZ=UTC find "$JAR_SRC" -exec touch -h -t 198001010000 {} +
+          (cd "$JAR_SRC" && TZ=UTC find . -type f | sort | TZ=UTC zip -q -X -D -@ "../$(basename "$JAR")")
+      - name: Render operator mode
+        working-directory: charts/adgangskomponent
+        run: |
+          # The keycloakx subchart is vendored, so rendering needs no network access.
+          helm template adgangskomponent . \
+            --set domain=adgang.example.com \
+            --set realm.name=os2adgang \
+            --set realm.displayName=OS2adgang > /dev/null
+      - name: Render chart mode
+        working-directory: charts/adgangskomponent
+        run: |
+          helm template adgangskomponent . \
+            --set domain=adgang.example.com \
+            --set realm.name=os2adgang \
+            --set realm.displayName=OS2adgang \
+            --set keycloak.chart.enabled=true \
+            --set keycloakx.database.vendor=postgres \
+            --set keycloakx.database.hostname=postgres \
+            --set keycloakx.database.database=os2adgang \
+            --set keycloakx.database.username=keycloak \
+            --set keycloakx.database.existingSecret=db \
+            --set keycloakx.database.existingSecretKey=password > /tmp/chart-mode.yaml
+          # Chart mode must not need the operator, so no custom resources may be rendered.
+          ! grep -q 'k8s.keycloak.org' /tmp/chart-mode.yaml
+      - name: Render realm import payload
+        working-directory: charts/adgangskomponent
+        run: |
+          # The realm JSON is the same representation the operator CR embeds; make sure it is
+          # valid JSON and carries the configured realm.
+          helm template adgangskomponent . \
+            --set domain=adgang.example.com \
+            --set realm.name=os2adgang \
+            --set realm.displayName=OS2adgang \
+            --set keycloak.chart.enabled=true \
+            --set keycloakx.database.vendor=postgres \
+            --set keycloakx.database.hostname=postgres \
+            --set keycloakx.database.database=os2adgang \
+            --set keycloakx.database.username=keycloak \
+            --set keycloakx.database.existingSecret=db \
+            --set keycloakx.database.existingSecretKey=password \
+            --show-only templates/keycloak-chart-realm-configmap.yaml > /tmp/realm-cm.yaml
+          yq -r '.data."realm.json"' /tmp/realm-cm.yaml | jq -e '.realm == "os2adgang"' > /dev/null

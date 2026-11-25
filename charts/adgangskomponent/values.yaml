@@ -1,3 +1,70 @@
+# Keycloak is deployed in one of two ways:
+#   keycloak.chart.enabled: false -> Keycloak + KeycloakRealmImport custom resources, reconciled
+#                                    by an installed keycloak-operator whose watchNamespaces covers
+#                                    this namespace. The historical behaviour.
+#   keycloak.chart.enabled: true  -> Keycloak runs from the bundled keycloakx subchart; no
+#                                    keycloak-operator is involved.
+# The realm, systems, ingress, db and admin UI/API settings below apply to both modes.
+# In chart mode the subchart has its own `keycloakx` values section; see its README for the full
+# set (https://github.com/codecentric/helm-charts/tree/main/charts/keycloakx).
+keycloak:
+  chart:
+    enabled: false
+  # KC_LOG_LEVEL, used by both modes.
+  logLevel: INFO,org.keycloak.saml:TRACE,org.keycloak.protocol.saml:TRACE,org.keycloak.events:DEBUG,org.keycloak.services:TRACE,org.keycloak.broker:TRACE
+
+# Values for the keycloakx subchart, used only when keycloak.chart.enabled is true. In operator
+# mode the equivalent settings are the `db` block and the Keycloak CR below; nothing here applies.
+# See https://github.com/codecentric/helm-charts/tree/main/charts/keycloakx for the full value set.
+keycloakx:
+  # Fixed names (`keycloak`, `keycloak-http`, `keycloak-headless`), matching the resources the
+  # operator creates, so URLs and the ingress do not depend on the Helm release name.
+  fullnameOverride: keycloak
+  replicas: 2
+  # Serve at the root, as the operator-managed instance does; the admin UI URLs depend on it.
+  http:
+    relativePath: /
+  # nginx-ingress sets X-Forwarded-*, not Forwarded.
+  proxy:
+    mode: xforwarded
+  podDisruptionBudget:
+    minAvailable: 1
+  # Keycloak imports realms from /opt/keycloak/data/import on startup. Because existing realms are
+  # skipped, this only seeds an empty database: to apply changes to `realm` or `systems` to an
+  # existing installation, delete the realm in Keycloak and restart the StatefulSet.
+  args:
+    - start
+    - --import-realm
+  extraEnvFrom: |
+    - configMapRef:
+        name: {{ .Release.Name }}-keycloak-env
+  extraVolumes: |
+    - name: oidc-script-based-protocol-mapper
+      configMap:
+        name: keycloak-oidc-script-based-protocol-mapper-configmap
+    - name: realm-import
+      configMap:
+        name: {{ .Release.Name }}-keycloak-realm
+  extraVolumeMounts: |
+    - name: oidc-script-based-protocol-mapper
+      mountPath: /opt/keycloak/providers/oidc-script-based-protocol-mapper.jar
+      subPath: oidc-script-based-protocol-mapper.jar
+    - name: realm-import
+      mountPath: /opt/keycloak/data/import
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  # Example database configuration; keycloakx requires all of it in chart mode.
+  # vendor: postgres
+  # hostname: cloudnative-pg-cluster-rw
+  # database: os2adgang
+  # username: keycloak
+  # existingSecret: cloudnative-pg-cluster-admin
+  # existingSecretKey: password
+
 domain:
 
 realm:

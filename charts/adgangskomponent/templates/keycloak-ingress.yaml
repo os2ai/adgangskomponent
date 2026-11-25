@@ -1,0 +1,34 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "chart" }}
+{{- /*
+Keycloak's ingress in chart mode, pointing at the keycloakx `keycloak-http` Service. In operator
+mode the operator creates the ingress itself from the Keycloak CR's `spec.ingress`, fed by the same
+`ingress` values.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  {{- if and .Values.ingress .Values.ingress.annotations }}
+  annotations:
+{{ .Values.ingress.annotations | toYaml | indent 4 }}
+  {{- end }}
+spec:
+  {{- with (.Values.ingress).className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ required "domain is required" .Values.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "adgangskomponent.keycloakChartFullname" . }}-http
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - {{ .Values.domain }}
+      secretName: {{ (.Values.ingress).tlsSecret | default "keycloak-tls-secret" }}
+{{- end }}

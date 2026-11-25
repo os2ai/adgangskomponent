@@ -2,7 +2,23 @@ Adgangskomponent
 ================
 
 This component bridges the gap between Fælleskommunal Adgangsstyring (FKA) and applications authenticating with OIDC.
-It consists of a Keycloak instance (relying on keycloak-operator) and realm bootstrapping; and a small admin UI for managing certificates.
+It consists of a Keycloak instance and realm bootstrapping, and a small admin UI for managing certificates.
+
+Keycloak can be deployed in two ways, selected with `keycloak.chart.enabled`:
+
+- `false` (default): the chart renders `Keycloak` and `KeycloakRealmImport` custom resources, so an
+  installed [keycloak-operator](https://www.keycloak.org/operator/installation) whose
+  `watchNamespaces` covers the release namespace is required. Realm changes are reconciled by the
+  operator.
+- `true`: Keycloak runs as a StatefulSet from the bundled
+  [keycloakx](https://github.com/codecentric/helm-charts/tree/main/charts/keycloakx) subchart and no
+  operator is needed. The realm is imported with `--import-realm` on startup, so it is only seeded
+  into an empty database; after changing `realm` or `systems`, delete the realm in Keycloak and
+  restart the StatefulSet. Database connection settings for this mode live under `keycloakx.database`.
+
+The bundled keycloakx chart is vendored in `charts/keycloakx-*.tgz` and pinned in `Chart.lock`, so
+rendering and packaging need no network access. Run `helm dependency build` in `charts/adgangskomponent`
+after changing the dependency version.
 
 When well-configured the system maps from FKA privileges to fields on the access token produced when authenticating through the Keycloak instance.
 This allows the delegation of roles and other authorization through OIDC-based authentication, based on privileges assigned through FKA.

@@ -1,3 +1,4 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "operator" }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -9,3 +10,4 @@ spec:
   selector:
     matchLabels:
       component: keycloak
+{{- end }}

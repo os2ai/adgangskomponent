@@ -1,0 +1,12 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "chart" }}
+{{- /*
+The same realm representation the operator consumes in KeycloakRealmImport, as the realm JSON file
+Keycloak reads from /opt/keycloak/data/import at startup (--import-realm).
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-keycloak-realm
+data:
+  realm.json: {{ include "adgangskomponent.realmJson" . | quote }}
+{{- end }}

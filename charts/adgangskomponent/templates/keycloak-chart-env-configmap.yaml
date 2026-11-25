@@ -1,0 +1,23 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "chart" }}
+{{- /*
+Non-secret Keycloak configuration that cannot live in keycloakx's own values section: the
+subchart renders templated values in its own scope, where this chart's top-level `domain` is not
+visible. Injected into the Keycloak container with keycloakx.extraEnvFrom.
+Database settings are NOT here; chart mode configures them through keycloakx.database.
+*/}}
+{{- $db := .Values.keycloakx.database }}
+{{- $_ := required "keycloak.chart.enabled=true requires keycloakx.database.vendor" $db.vendor }}
+{{- $_ := required "keycloak.chart.enabled=true requires keycloakx.database.hostname" $db.hostname }}
+{{- $_ := required "keycloak.chart.enabled=true requires keycloakx.database.database" $db.database }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-keycloak-env
+data:
+  KC_HOSTNAME: https://{{ required "domain is required" .Values.domain }}
+  # The realm's privileges claim is computed by a script-based protocol mapper.
+  KC_FEATURES: scripts
+  KC_LOG_LEVEL: {{ .Values.keycloak.logLevel }}
+  KC_HEALTH_ENABLED: "true"
+  KC_METRICS_ENABLED: "true"
+{{- end }}

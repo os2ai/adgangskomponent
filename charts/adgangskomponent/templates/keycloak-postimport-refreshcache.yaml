@@ -1,3 +1,4 @@
+{{- if eq (include "adgangskomponent.keycloakMode" .) "operator" }}
 # This job refreshes the cache of the keycloak instance in os2adgang after
 # the realmimport has completed.
 apiVersion: batch/v1
@@ -22,3 +23,4 @@ spec:
           command: ["kubectl"]
           args: ["rollout", "restart", "-n{{ .Release.Namespace }}", "statefulset/keycloak"]
       restartPolicy: OnFailure
+{{- end }}
