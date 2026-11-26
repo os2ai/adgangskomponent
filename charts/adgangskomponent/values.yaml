@@ -60,6 +60,12 @@ admin:
         memory: 256Mi
   api:
     #domain:
+    # Comma-separated CORS allow-list. When the value is omitted it defaults
+    # to the admin UI origin (https://admin.<domain> or admin.ui.domain).
+    # An explicit "" (or the API environment variable being unset/empty)
+    # falls back to Access-Control-Allow-Origin: * (deprecated; will
+    # disable CORS entirely in v2.0.0).
+    #corsAllowedOrigins: https://admin.example.dk
     image:
       repository: ghcr.io/os2ai/adgangskomponent/admin-api
     # Small API, so the defaults are deliberately tiny. Note it shells

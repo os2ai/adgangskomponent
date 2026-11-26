@@ -33,3 +33,10 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 2
           failureThreshold: 3
+        env:
+        {{- $origins := printf "https://%s" (.Values.admin.ui.domain | default (print "admin." .Values.domain)) }}
+        {{- if hasKey .Values.admin.api "corsAllowedOrigins" }}
+        {{- $origins = .Values.admin.api.corsAllowedOrigins }}
+        {{- end }}
+        - name: CORS_ALLOWED_ORIGINS
+          value: {{ $origins | quote }}
